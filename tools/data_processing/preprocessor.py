@@ -66,7 +66,7 @@ class MoleculeProcessor:
 
     def process(self, smiles: str) -> str:
         """Converts processed smiles to  Chem.mol"""
-        processed_smiles = self.preprocessor().process_smiles(smiles)
+        processed_smiles = self.preprocessor.process_smiles(smiles)
         mol = Chem.MolFromSmiles(processed_smiles.strip())
         if mol is not None:
             mol = Chem.AddHs(mol)

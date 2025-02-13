@@ -95,7 +95,7 @@ class ChemPropFGHierarchicalModel(nn.Module):
             final_embeddings
         )  # should be [B, 1], is returning [1, B] for some reason
 
-        regression_output = regression_output.view(-1, 1)  # fix shape issue
+        # regression_output = regression_output.view(-1, 1)  # fix shape issue
         if self.contrastive:
             contrastive_loss = torch.stack(contrast_losses).mean()
         else:
