@@ -82,10 +82,20 @@ class ChemPropFGHierarchicalModel(nn.Module):
                 cl_loss = torch.tensor(0.0, device=f_atoms.device)
             contrast_losses.append(cl_loss)
             monomer_embeds.append(final_embed1)
-        if additional_features:
-            monomer_embeds.append(additional_features)
+        if additional_features is not None:
+            additional_features = torch.tensor(
+                additional_features, dtype=torch.float32, device=f_atoms.device
+            )
+            final_embeddings = torch.cat(
+                [final_embeddings, additional_features], dim=1
+            )  # 🔥 Fix: Concatenate on dim=1
+
         final_embeddings = torch.cat(monomer_embeds, dim=0)  # [B, FINAL_DIM]
-        regression_output = self.regression_head(final_embeddings)  # [B, 1]
+        regression_output = self.regression_head(
+            final_embeddings
+        )  # should be [B, 1], is returning [1, B] for some reason
+
+        regression_output = regression_output.view(-1, 1)  # fix shape issue
         if self.contrastive:
             contrastive_loss = torch.stack(contrast_losses).mean()
         else:

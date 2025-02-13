@@ -1,7 +1,6 @@
 import itertools
 import random
 import logging
-import torch
 from tools.model.trainer import GenericTrainer
 from tools.model.model_factory import ModelFactory
 from tools.model.loss import MSEWithContrastiveLoss
@@ -19,18 +18,13 @@ class HyperparameterTuner:
         val_loader,
         test_loader,
         device,
+        enable_tuning=True,
         search_type="grid",
         num_samples=5,
+        fixed_params=None,
     ):
         """
-        Model-Agnostic Hyperparameter Tuner.
-        Args:
-            model_factory: A factory for creating models dynamically.
-            param_grid: Dictionary of hyperparameter search space.
-            train_loader, val_loader, test_loader: Data loaders.
-            device: PyTorch device (cuda or cpu).
-            search_type: "grid" for exhaustive search, "random" for random sampling.
-            num_samples: Number of configurations to test if using random search.
+        Hyperparameter tuner that dynamically creates models and passes only necessary parameters.
         """
         self.model_factory = model_factory
         self.param_grid = param_grid
@@ -38,12 +32,17 @@ class HyperparameterTuner:
         self.val_loader = val_loader
         self.test_loader = test_loader
         self.device = device
+        self.enable_tuning = enable_tuning
         self.search_type = search_type
         self.num_samples = num_samples
+        self.fixed_params = fixed_params
         self.results = {}
 
     def generate_configs(self):
         """Generate hyperparameter configurations (Grid or Random Search)."""
+        if not self.enable_tuning and self.fixed_params:
+            return [self.fixed_params]
+
         param_keys = self.param_grid.keys()
         param_combinations = list(itertools.product(*self.param_grid.values()))
 
@@ -55,7 +54,7 @@ class HyperparameterTuner:
         return [dict(zip(param_keys, values)) for values in param_combinations]
 
     def tune(self):
-        """Perform hyperparameter tuning."""
+        """Train a single model if tuning is disabled, otherwise perform hyperparameter tuning."""
         configs = self.generate_configs()
         best_model = None
         best_loss = float("inf")
@@ -66,13 +65,9 @@ class HyperparameterTuner:
             # Create model dynamically
             model = self.model_factory.create_model(config, self.device)
 
-            # Optimizer
-            optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
-
-            # Trainer
+            # Trainer (🔥 Now handles optimizer internally)
             trainer = GenericTrainer(
                 model,
-                optimizer,
                 MSEWithContrastiveLoss(),
                 self.train_loader,
                 self.val_loader,
@@ -91,6 +86,11 @@ class HyperparameterTuner:
             if val_loss < best_loss:
                 best_loss = val_loss
                 best_model = config
+
+            if (
+                not self.enable_tuning
+            ):  # 🔥 If tuning is disabled, stop after one iteration
+                break
 
         logger.info(f"Best Model: {best_model} with Validation Loss: {best_loss}")
         return best_model
