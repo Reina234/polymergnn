@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from tools.data_processing.molecular_dataset import MolecularDataset, custom_collate_fn
-from models.chemprop_fg_hierarchical import ChemPropFGHierarchicalModel
+from models.chemprop2_hierarchical import ChemPropFGVer2
 from tools.model.model_factory import ModelFactory
 from tools.model.trainer import GenericTrainer
 from tools.model.loss import MSEWithContrastiveLoss
@@ -35,7 +35,7 @@ fixed_hyperparams = {
     "st_heads": 4,
     "st_layers": 1,
     "temperature": 0.5,
-    "dropout_prob": 0.2,
+    "dropout_prob": 0.4,
     "contrastive": False,
     "lr": 1e-3,
 }
@@ -44,7 +44,7 @@ extra_args = {"target_dim": 2}
 
 # Create Model
 chemprop_factory = ModelFactory(
-    ChemPropFGHierarchicalModel,
+    ChemPropFGVer2,
     model_param_keys=list(fixed_hyperparams.keys()),
     extra_args=extra_args,
 )
