@@ -3,29 +3,29 @@ from rdkit import Chem  # type: ignore
 
 
 # pylint: disable=no-member
-class Preprocessor(ABC):
+class SmilesTransformer(ABC):
 
     @abstractmethod
-    def process_smiles(self, smiles: str) -> str:
+    def transform(self, smiles: str) -> str:
         pass
 
 
-class NoPreprocessing(Preprocessor):
+class NoSmilesTransform(SmilesTransformer):
 
-    def process_smiles(self, smiles: str) -> str:
+    def transform(self, smiles: str) -> str:
         return smiles
 
 
-class CanonicalPreprocessor(Preprocessor):
+class CanonicalSmilesTransform(SmilesTransformer):
 
-    def process_smiles(self, smiles: str) -> str:
+    def transform(self, smiles: str) -> str:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             raise ValueError(f"Invalid SMILES: {smiles}")
         return Chem.MolToSmiles(mol, canonical=True)
 
 
-class PolymerizationPreprocessor(Preprocessor):
+class PolymerisationSmilesTransform(SmilesTransformer):
 
     def _identify_polymer_bond(self):
         for bond in self.mol.GetBonds():
@@ -35,7 +35,7 @@ class PolymerizationPreprocessor(Preprocessor):
                     return bond
         raise ValueError("No suitable polymerizable double bond found in the molecule.")
 
-    def process_smiles(self, smiles: str) -> str:
+    def transform(self, smiles: str) -> str:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             raise ValueError(f"Invalid SMILES: {smiles}")
@@ -54,23 +54,6 @@ class PolymerizationPreprocessor(Preprocessor):
         rw_mol.AddBond(atom2, dummy2_idx, Chem.BondType.SINGLE)
 
         return Chem.MolToSmiles(rw_mol, canonical=True)
-
-
-class MoleculeProcessor:
-    """
-    Handles the processing of molecules using a specified preprocessor.
-    """
-
-    def __init__(self, preprocessor: Preprocessor = NoPreprocessing()):
-        self.preprocessor = preprocessor
-
-    def process(self, smiles: str) -> str:
-        """Converts processed smiles to  Chem.mol"""
-        processed_smiles = self.preprocessor.process_smiles(smiles)
-        mol = Chem.MolFromSmiles(processed_smiles.strip())
-        if mol is not None:
-            mol = Chem.AddHs(mol)
-        return mol
 
 
 # add in conversion to mol?

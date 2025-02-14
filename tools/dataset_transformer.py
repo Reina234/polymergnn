@@ -1,20 +1,17 @@
 from abc import ABC, abstractmethod
-import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
-class PreprocessorStrategy(ABC):
+class DatasetTransformer(ABC):
     """Abstract base class for preprocessing strategies."""
 
     @abstractmethod
     def fit(self, data):
         """Fits the preprocessing strategy on the dataset."""
-        pass
 
     @abstractmethod
     def transform(self, data):
         """Applies the preprocessing strategy."""
-        pass
 
     def fit_transform(self, data):
         """Convenience method to fit and transform in one step."""
@@ -22,7 +19,7 @@ class PreprocessorStrategy(ABC):
         return self.transform(data)
 
 
-class NoDataPreprocessing(PreprocessorStrategy):
+class NoDataTransform(DatasetTransformer):
     """Dummy strategy (does nothing)."""
 
     def fit(self, data):
@@ -32,7 +29,7 @@ class NoDataPreprocessing(PreprocessorStrategy):
         return data
 
 
-class StandardScalerPreprocessor(PreprocessorStrategy):
+class StandardScalerTransform(DatasetTransformer):
     """StandardScaler (Mean 0, Std 1)"""
 
     def __init__(self):
@@ -45,7 +42,7 @@ class StandardScalerPreprocessor(PreprocessorStrategy):
         return self.scaler.transform(data)
 
 
-class MinMaxScalerPreprocessor(PreprocessorStrategy):
+class MinMaxScalerTransform(DatasetTransformer):
     """Min-Max Scaler (0 to 1)"""
 
     def __init__(self):

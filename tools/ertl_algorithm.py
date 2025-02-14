@@ -1,8 +1,7 @@
 from collections import namedtuple
 from rdkit import Chem  # type: ignore
-
-# pylint: disable=no-member
-IFG = namedtuple("IFG", ["atomIds", "bonds", "envIds", "atoms", "type"])
+from config.data_models import IFG
+from typing import List
 
 
 class ErtlAlgorithm:
@@ -51,7 +50,7 @@ class ErtlAlgorithm:
         self._merge_groups(mol=mol, marked=marked, aset=bset)
         aset.update(bset)
 
-    def detect(self, mol: Chem.Mol):
+    def detect(self, mol: Chem.Mol) -> List[IFG]:
         """Finds and labels functional groups in the molecule."""
 
         marked_atoms = self._mark_atoms(mol=mol)
@@ -79,17 +78,22 @@ class ErtlAlgorithm:
 
             # Get bonds where both endpoints are in the FG.
             bonds_in_group = set()
+            bonds_in_full_group = set()
+
             for bond in mol.GetBonds():
                 begin = bond.GetBeginAtomIdx()
                 end = bond.GetEndAtomIdx()
-                if begin in full_group and end in full_group:
+                if begin in g and end in g:
                     bonds_in_group.add(bond.GetIdx())
+
+                if begin in full_group and end in full_group:
+                    bonds_in_full_group.add(bond.GetIdx())
 
             functional_groups.append(
                 IFG(
                     atomIds=tuple(full_group),
                     bonds=tuple(bonds_in_group),
-                    # The 'atoms' field shows the original marked atoms.
+                    all_bonds=tuple(bonds_in_full_group),
                     envIds=tuple(environment),
                     atoms=Chem.MolFragmentToSmiles(
                         mol, g, canonical=True, allHsExplicit=True
