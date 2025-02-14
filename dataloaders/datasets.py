@@ -105,12 +105,27 @@ class MolecularDataset(ABC, Dataset):
     def __getitem__(self, idx):
         pass
 
+    @abstractmethod
+    def _generate_features(self, mols: List[Mol]) -> torch.tensor:
+        pass
+
+    def _add_features(self, mols: List[Mol], features: torch.Tensor) -> torch.Tensor:
+        additional_features = self._generate_features(mols)
+        if features is None:
+            return additional_features
+
+        if additional_features is not None:
+            return torch.cat((features, additional_features), dim=1)
+        return features
+
     def _get_default_items(
         self, idx
     ) -> Tuple[List[Mol], List[MolGraph], torch.tensor, torch.tensor]:
         molgraphs = self.molgraphs[idx]
+        mols = self.mols[idx]
         batch_molgraph = BatchMolGraph(molgraphs)
         features = self._retrieve_tensor_from_column(idx=idx, column=self.features)
+        features = self._add_features(mols=mols, features=features)
         targets = self._retrieve_tensor_from_column(idx=idx, column=self.targets)
 
         return batch_molgraph, features, targets
