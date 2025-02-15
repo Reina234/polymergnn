@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from chemprop.data import MolGraph
 from tools.ertl_algorithm import ErtlAlgorithm
-from dataloaders.featurisers import FGMembershipBondFeaturiser
+from dataloaders.bond_featurisers import FGMembershipBondFeaturiser
 from chemprop.featurizers.atom import MultiHotAtomFeaturizer
 from chemprop.featurizers.molgraph.molecule import SimpleMoleculeMolGraphFeaturizer
 
