@@ -1,12 +1,14 @@
 import torch
 import os
 import logging
+from typing import Optional
 import pandas as pd
 from torch.utils.data import DataLoader
 from sklearn.model_selection import ParameterGrid
 from training.trainer import Trainer  # Or your Trainer subclass (e.g., MoleculeTrainer)
 from training.loss import MSELossStrategy
 from training.model_factory import ModelFactory
+from torch.utils.tensorboard import SummaryWriter
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +22,24 @@ class HyperparameterTuner:
         val_loader: DataLoader,
         test_loader: DataLoader,
         device: torch.device,
-        trainer: Trainer,
+        trainer: Trainer,  # Expecting a Trainer subclass
         search_space: dict,
         max_trials: int = None,
         use_tensorboard: bool = True,
         save_results_dir: str = "results/hparams_tuning",
+        shared_writer: Optional[SummaryWriter] = None,
     ):
         """
         Args:
-            model_factory: Function to create a model instance from a hyperparameter dict.
+            model_factory: Creates a model instance from hyperparameters.
             train_loader, val_loader, test_loader: DataLoaders.
             device: Torch device.
-            search_space: Dict where keys are hyperparameter names and values are lists.
-            max_trials: Maximum number of trials (optional).
+            trainer: Trainer subclass (e.g., MoleculeTrainer).
+            search_space: Hyperparameter grid.
+            max_trials: Maximum number of trials.
             use_tensorboard: Whether to log to TensorBoard.
-            save_results_dir: Directory to save results.
+            save_results_dir: Directory for results.
+            shared_writer: A shared SummaryWriter for all trials (optional).
         """
         self.model_factory = model_factory
         self.train_loader = train_loader
@@ -47,6 +52,7 @@ class HyperparameterTuner:
         self.use_tensorboard = use_tensorboard
         self.save_results_dir = save_results_dir
         os.makedirs(save_results_dir, exist_ok=True)
+        self.shared_writer = shared_writer
 
     def run(self):
         param_grid = list(ParameterGrid(self.search_space))
@@ -58,10 +64,9 @@ class HyperparameterTuner:
         for i, params in enumerate(param_grid):
             logger.info("Trial %d/%d with params: %s", i + 1, len(param_grid), params)
 
-            # Create the model using our factory function.
+            # Create the model using the factory.
             model = self.model_factory.create_model(params).to(self.device)
 
-            # Configure optimizer with learning rate and weight decay.
             optimizer = torch.optim.Adam(
                 model.parameters(),
                 lr=params["lr"],
@@ -69,8 +74,8 @@ class HyperparameterTuner:
             )
             loss_strategy = MSELossStrategy()
 
-            # Instantiate your Trainer (replace GenericTrainer with your actual trainer class if needed)
-            trainer = self.trainer(
+            # Instantiate the Trainer with shared tensorboard writer and updated flush/close settings.
+            trainer_instance = self.trainer(
                 model=model,
                 optimiser=optimizer,
                 loss_strategy=loss_strategy,
@@ -83,16 +88,18 @@ class HyperparameterTuner:
                 use_tensorboard=self.use_tensorboard,
                 save_results_dir=self.save_results_dir,
                 track_learning_curve=True,
+                writer=self.shared_writer,
+                flush_tensorboard_each_epoch=False,
+                close_writer_on_finish=False,
             )
 
-            trainer.train(epochs=params["epochs"])
-            trainer.test()
+            trainer_instance.train(epochs=params["epochs"])
+            trainer_instance.test()
 
-            # For demonstration, we assume test loss is available in trainer.test() output.
             trial_result = {
                 "params": params,
-                "test_loss": getattr(trainer, "final_test_loss", None),
-                "metrics": getattr(trainer, "final_test_metrics", {}),
+                "test_loss": trainer_instance.final_test_loss,
+                "metrics": trainer_instance.final_test_metrics,
             }
             results.append(trial_result)
             logger.info("Trial %d Results: %s", i + 1, trial_result)

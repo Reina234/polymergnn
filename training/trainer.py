@@ -13,11 +13,12 @@ from sklearn.metrics import (
     r2_score,
 )
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class Trainer(ABC):
-    """Base Trainer with all original utilities and improvements."""
+    """Base Trainer with utilities and improvements for modularity and single responsibility."""
 
     def __init__(
         self,
@@ -35,6 +36,9 @@ class Trainer(ABC):
         track_learning_curve=False,
         evaluation_metrics: List[str] = None,
         figure_size=(8, 6),
+        writer: Optional[SummaryWriter] = None,
+        flush_tensorboard_each_epoch: bool = False,
+        close_writer_on_finish: bool = True,
     ):
         self.model = model
         self.optimiser = optimiser
@@ -54,11 +58,23 @@ class Trainer(ABC):
 
         self.use_tensorboard = use_tensorboard
         if self.use_tensorboard:
-            self.writer = SummaryWriter(log_dir)
-            self.writer.add_hparams(self.hyperparams, {})
+            if writer is not None:
+                self.writer = writer
+            else:
+                self.writer = SummaryWriter(log_dir)
+                self.writer.add_hparams(self.hyperparams, {})
+        else:
+            self.writer = None
+
+        self.flush_tensorboard_each_epoch = flush_tensorboard_each_epoch
+        self.close_writer_on_finish = close_writer_on_finish
 
         self.train_losses = [] if self.track_learning_curve else None
         self.val_losses = [] if self.track_learning_curve else None
+
+        # Attributes to store final test metrics.
+        self.final_test_loss = None
+        self.final_test_metrics = {}
 
     @abstractmethod
     def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -70,14 +86,18 @@ class Trainer(ABC):
     ) -> torch.Tensor:
         pass
 
-    def _train_batch(self, batch) -> float:
-        """Performs a single training batch."""
+    def _train_batch(self, batch) -> Tuple[float, np.ndarray, np.ndarray]:
+        """Performs a single training batch and returns loss and detached outputs."""
         self.optimiser.zero_grad()
         predictions, labels = self.forward_pass(batch)
         loss = self.compute_loss(predictions, labels)
         loss.backward()
         self.optimiser.step()
-        return loss.item()
+        return (
+            loss.item(),
+            predictions.detach().cpu().numpy(),
+            labels.detach().cpu().numpy(),
+        )
 
     def _train_epoch(self, epoch: int) -> Tuple[float, Optional[Dict[str, float]]]:
         """Trains for one epoch and returns average loss and additional metrics."""
@@ -86,30 +106,25 @@ class Trainer(ABC):
         all_preds, all_labels = [], []
 
         for batch in self.train_loader:
-            batch_loss = self._train_batch(batch)
+            batch_loss, preds, labels = self._train_batch(batch)
             epoch_loss += batch_loss
-
-            # Collect predictions and labels for training metrics
-            predictions, labels = self.forward_pass(batch)
-            all_preds.append(predictions.detach().cpu().numpy())
-            all_labels.append(labels.detach().cpu().numpy())
+            all_preds.append(preds)
+            all_labels.append(labels)
 
         avg_loss = epoch_loss / self.num_batches
         all_preds = np.concatenate(all_preds)
         all_labels = np.concatenate(all_labels)
         train_metrics = self.compute_metrics(all_labels, all_preds)
 
-        # ✅ Log Training Metrics & Loss Properly
         metrics_dict = {"Training Loss": avg_loss, **train_metrics}
         self._write_scalar_to_tensorboard(metrics_dict, epoch)
-
         self._add_to_learning_curve(avg_loss, is_train=True)
         return avg_loss, train_metrics
 
     def evaluate(
         self, loader: torch.utils.data.DataLoader, epoch: int, mode: str = "Validation"
     ) -> Tuple[float, Dict[str, float]]:
-        """Evaluates model and logs MSE, MAPE, RMSE, R² per epoch."""
+        """Evaluates model and logs metrics."""
         self.model.eval()
         all_preds, all_labels = [], []
         total_loss = 0.0
@@ -125,26 +140,25 @@ class Trainer(ABC):
         avg_loss = total_loss / len(loader)
         all_preds = np.concatenate(all_preds)
         all_labels = np.concatenate(all_labels)
-        val_metrics = self.compute_metrics(all_labels, all_preds)
+        metrics = self.compute_metrics(all_labels, all_preds)
 
-        # ✅ Log Validation Metrics
-        metrics_dict = {"Validation Loss": avg_loss, **val_metrics}
+        metrics_dict = {f"{mode} Loss": avg_loss, **metrics}
         self._write_scalar_to_tensorboard(metrics_dict, epoch)
-
         self._add_to_learning_curve(avg_loss, is_train=False)
-        return avg_loss, val_metrics
+        return avg_loss, metrics
 
     def compute_metrics(
         self, labels: np.ndarray, preds: np.ndarray
     ) -> Dict[str, float]:
         """Computes common regression metrics."""
-
         results = {}
         for metric in self.evaluation_metrics:
             if metric == "MAE":
                 results["Metrics/MAE"] = mean_absolute_error(labels, preds)
             elif metric == "MAPE":
-                results["Metrics/MAPE"] = mean_absolute_percentage_error(labels, preds)
+                results["Metrics/MAPE"] = 100 * mean_absolute_percentage_error(
+                    labels, preds
+                )
             elif metric == "RMSE":
                 results["Metrics/RMSE"] = np.sqrt(mean_squared_error(labels, preds))
             elif metric == "R2":
@@ -161,7 +175,6 @@ class Trainer(ABC):
             self.val_losses.append(loss)
 
     def _write_scalar_to_tensorboard(self, metrics: Dict[str, float], epoch: int):
-
         if self.use_tensorboard and self.writer is not None:
             self.writer.add_scalar("Epoch", epoch, epoch)
             for key, value in metrics.items():
@@ -170,7 +183,6 @@ class Trainer(ABC):
     def _normalise_loss_dict(
         self, loss_dict: Dict[str, float], keys_to_normalise: Optional[List[str]]
     ) -> Dict[str, float]:
-        """Normalizes loss metrics across batches."""
         if keys_to_normalise is None:
             keys_to_normalise = loss_dict.keys()
         for key in keys_to_normalise:
@@ -178,29 +190,25 @@ class Trainer(ABC):
         return loss_dict
 
     def _flush_tensorboard(self):
-        """Flushes TensorBoard logs."""
-        if self.use_tensorboard:
+        if self.use_tensorboard and self.writer is not None:
             self.writer.flush()
 
     def _write_hparams_to_tensorboard(
         self, train_losses: Dict[str, float], val_losses: Dict[str, float]
     ):
-
         if self.use_tensorboard and self.writer is not None:
             final_losses = self._make_final_losses(train_losses, val_losses)
             hparams = {**self.hyperparams, "epochs": self.hyperparams.get("epochs", 0)}
-
             self.writer.add_hparams(hparams, final_losses)
-
             if "Final Train Loss" in final_losses:
                 self.writer.add_scalar(
                     "Final/Train Loss", final_losses["Final Train Loss"]
                 )
             if "Final Val Loss" in final_losses:
                 self.writer.add_scalar("Final/Val Loss", final_losses["Final Val Loss"])
-
-            self.writer.flush()  # ✅ Ensure all logs are flushed
-            self.writer.close()
+            self.writer.flush()
+            if self.close_writer_on_finish:
+                self.writer.close()
 
     @abstractmethod
     def _make_final_losses(
@@ -208,7 +216,6 @@ class Trainer(ABC):
         additional_train_losses: Dict[str, float],
         additional_val_losses: Dict[str, float],
     ) -> Dict[str, float]:
-
         pass
 
     def train(self, epochs: int):
@@ -216,11 +223,11 @@ class Trainer(ABC):
         logger.info("Starting Training...")
         for epoch in tqdm(range(epochs), desc="Training Progress"):
             epoch_loss, _ = self._train_epoch(epoch)
-            val_loss, _ = None, None
+            val_loss = None
             if self.val_loader:
                 val_loss, _ = self.evaluate(self.val_loader, epoch, mode="Validation")
-
-            self._flush_tensorboard()
+            if self.flush_tensorboard_each_epoch:
+                self._flush_tensorboard()
 
         self._write_hparams_to_tensorboard(
             train_losses={"Final Train Loss": epoch_loss},
@@ -233,17 +240,18 @@ class Trainer(ABC):
         logger.info("Training Completed.")
 
     def test(self):
-        """Tests the model using the test loader."""
+        """Tests the model using the test loader and records final metrics."""
         if not self.test_loader:
             logger.warning("No test loader provided.")
             return
-        _, test_metrics = self.evaluate(self.test_loader, epoch=0, mode="Test")
+        final_loss, test_metrics = self.evaluate(self.test_loader, epoch=0, mode="Test")
+        self.final_test_loss = final_loss
+        self.final_test_metrics = test_metrics
 
         results_path = os.path.join(self.save_results_dir, "test_results.txt")
         with open(results_path, "a", encoding="utf-8") as f:
             for k, v in test_metrics.items():
                 f.write("{k}: {v:.6f}\n".format(k=k, v=v))
-
         logger.info("Test results saved to %s", results_path)
 
     def plot_learning_curve(self):
@@ -265,7 +273,6 @@ class Trainer(ABC):
         plt.show()
 
     def _create_learning_curve_figname(self):
-        """Creates a filename for the learning curve plot."""
         figname = "_".join(
             [
                 f"{key}={value}"
@@ -280,7 +287,6 @@ class MoleculeTrainer(Trainer):
     """Trainer specialized for MoleculeEmbeddingModel."""
 
     def forward_pass(self, batch):
-        """Pass batch through the molecule model."""
         batch = {
             k: v.to(self.device) if isinstance(v, torch.Tensor) else v
             for k, v in batch.items()
@@ -292,7 +298,6 @@ class MoleculeTrainer(Trainer):
     def compute_loss(
         self, predictions: torch.Tensor, labels: torch.Tensor
     ) -> torch.Tensor:
-        """Computes loss using a loss strategy."""
         return torch.nn.functional.mse_loss(predictions, labels)
 
     def _make_final_losses(
@@ -300,20 +305,15 @@ class MoleculeTrainer(Trainer):
         additional_train_losses: Dict[str, float],
         additional_val_losses: Dict[str, float],
     ) -> Dict[str, float]:
-        """Generates the final losses for tensorboard hparam logging."""
         final_losses = {}
-
         if additional_train_losses:
             final_losses["Final Train Loss"] = additional_train_losses.get(
                 "Final Train Loss", 0
             )
-
         if additional_val_losses:
             final_losses["Final Val Loss"] = additional_val_losses.get(
                 "Final Val Loss", 0
             )
-
-        logger.info(f"Final Training Loss: {final_losses.get('Final Train Loss', 0)}")
-        logger.info(f"Final Validation Loss: {final_losses.get('Final Val Loss', 0)}")
-
+        logger.info("Final Training Loss: %s", final_losses.get("Final Train Loss", 0))
+        logger.info("Final Validation Loss: %s", final_losses.get("Final Val Loss", 0))
         return final_losses
