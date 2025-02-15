@@ -2,7 +2,7 @@ import torch
 from abc import ABC, abstractmethod
 from modules.configured_mpnn import ConfiguredMPNN
 from models.molecule_embedding_model import MoleculeEmbeddingModel
-from dataloaders.molecule_featuriser import RDKitFeaturizer
+from featurisers.molecule_featuriser import RDKitFeaturizer
 from models.molecule_prediction_model import MoleculePredictionModel
 
 

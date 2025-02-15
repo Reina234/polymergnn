@@ -1,4 +1,4 @@
-from dataloaders.mol_to_molgraph import FGMembershipMol2MolGraph
+from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from rdkit import Chem
 
 smiles = "CC"

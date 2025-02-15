@@ -29,7 +29,6 @@ class ChemPropFGVer2(nn.Module):
         st_layers: int,
         temperature: float,
         dropout_prob: float,
-        contrastive=True,
         additional_features_dim=0,
         target_dim: int = 1,
     ):
@@ -37,7 +36,6 @@ class ChemPropFGVer2(nn.Module):
         # but then reg head dims would be final_dims + additional_features_dims
         super(ChemPropFGVer2, self).__init__()
         self.mpnn = BondMessagePassing(d_h=mpnn_dim)
-        self.contrastive = contrastive
         self.temperature = temperature
         self.hierarchical_fg_model = HierarchicalFGModel(
             mpnn_dim=mpnn_dim,
@@ -101,9 +99,4 @@ class ChemPropFGVer2(nn.Module):
             final_embeddings
         )  # should be [B, 1], is returning [1, B] for some reason
 
-        # regression_output = regression_output.view(-1, 1)  # fix shape issue
-        if self.contrastive:
-            contrastive_loss = torch.stack(contrast_losses).mean()
-        else:
-            contrastive_loss = torch.tensor(0.0, device=f_atoms.device)
-        return regression_output, contrastive_loss, final_embeddings
+        return regression_output, final_embeddings

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from typing import List
 from modules.configured_mpnn import ConfiguredMPNN
-from dataloaders.molecule_featuriser import RDKitFeaturizer
+from featurisers.molecule_featuriser import RDKitFeaturizer
 
 
 class MoleculeEmbeddingModel(nn.Module):

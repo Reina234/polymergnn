@@ -1,7 +1,7 @@
 import torch
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from dataloaders.batched_dataset import PolymerBertDataset
+from training.batched_dataset import PolymerBertDataset
 from tools.smiles_transformers import NoSmilesTransform
 from torch.utils.data import DataLoader
 

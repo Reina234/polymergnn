@@ -6,7 +6,7 @@ import torch
 import pandas as pd
 from training.trainer import MoleculeTrainer
 from sklearn.model_selection import train_test_split
-from dataloaders.batched_dataset import PolymerBertDataset
+from training.batched_dataset import PolymerBertDataset
 from tools.smiles_transformers import NoSmilesTransform
 from torch.utils.data import DataLoader
 
@@ -49,7 +49,7 @@ test_loader = DataLoader(
 # Hyperparameter search space
 search_space = {
     "lr": [0.001, 0.0005],
-    "epochs": [10, 20],
+    "epochs": [50, 80],
     "hidden_dim": [128, 256],
     "d_h": [300, 400],
     "depth": [2, 3],
