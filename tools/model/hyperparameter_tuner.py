@@ -1,8 +1,8 @@
 import itertools
 import random
 import logging
-from tools.model.trainer import GenericTrainer
-from tools.model.model_factory import ModelFactory
+from training.trainer import Trainer
+from training.model_factory import ModelFactory
 from tools.model.loss import MSEWithContrastiveLoss
 
 logging.basicConfig(level=logging.INFO)

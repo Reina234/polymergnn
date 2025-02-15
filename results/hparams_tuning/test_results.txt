@@ -1,0 +1,7 @@
+Metrics/MAE: 0.403826
+Metrics/MAPE: 1.771463
+Metrics/RMSE: 0.548916
+Loss/Test: 0.223295
+Metrics/MAE: 0.597506
+Metrics/MAPE: 2.865751
+Metrics/RMSE: 0.756471
