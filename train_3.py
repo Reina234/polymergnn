@@ -21,10 +21,10 @@ train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
 val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
 
 # Convert datasets to DataLoader
-train_loader = MolecularDataset(train_df, target_columns=[1, 2])
-val_loader = MolecularDataset(val_df, target_columns=[1, 2])
+train_loader = MolecularDataset(train_df, target_columns=[1])
+val_loader = MolecularDataset(val_df, target_columns=[1])
 
-test_loader = MolecularDataset(test_df, target_columns=[1, 2])
+test_loader = MolecularDataset(test_df, target_columns=[1])
 
 # Define Fixed Hyperparameters
 fixed_hyperparams = {

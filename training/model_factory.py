@@ -1,5 +1,6 @@
 import torch
 from abc import ABC, abstractmethod
+from typing import Any, Dict
 from modules.configured_mpnn import ConfiguredMPNN
 from models.molecule_embedding_model import MoleculeEmbeddingModel
 from featurisers.molecule_featuriser import RDKitFeaturizer
@@ -20,7 +21,7 @@ class ModelFactory(ABC):
         pass
 
 
-class MoleculeEmbeddingModelFactory(ModelFactory):
+class MoleculeEmbeddingModelFactory(ABC):
     """Factory for creating MoleculeEmbeddingModel instances."""
 
     def __init__(
@@ -43,8 +44,7 @@ class MoleculeEmbeddingModelFactory(ModelFactory):
         self.default_hidden_dim = default_hidden_dim
         self.default_optimizer_class = default_optimizer_class
 
-    def create_model(self, params):
-        """Creates a MoleculeEmbeddingModel based on hyperparameters."""
+    def create_model(self, params: Dict[str, Any]):
         mpnn = ConfiguredMPNN(
             output_dim=self.default_hidden_dim,
             d_h=params.get("d_h", 300),
@@ -55,6 +55,10 @@ class MoleculeEmbeddingModelFactory(ModelFactory):
 
         rdkit_featurizer = RDKitFeaturizer()
 
+        # Optional components controlled by hyperparameters.
+        use_rdkit = params.get("use_rdkit", True)
+        use_chembert = params.get("use_chembert", True)
+
         model = MoleculeEmbeddingModel(
             chemprop_mpnn=mpnn,
             rdkit_featurizer=rdkit_featurizer,
@@ -63,12 +67,12 @@ class MoleculeEmbeddingModelFactory(ModelFactory):
             ),
             chemberta_dim=params.get("chemberta_dim", self.default_chemberta_dim),
             hidden_dim=params.get("hidden_dim", self.default_hidden_dim),
+            use_rdkit=use_rdkit,
+            use_chembert=use_chembert,
         )
-
         return model
 
     def create_optimizer(self, model, params):
-        """Creates an optimizer for the MoleculeEmbeddingModel."""
         return self.default_optimizer_class(
             model.parameters(),
             lr=params.get("lr", 0.001),
@@ -76,12 +80,12 @@ class MoleculeEmbeddingModelFactory(ModelFactory):
         )
 
 
-class MoleculeEmbeddingPredictionModelFactory(ModelFactory):
+class MoleculeEmbeddingPredictionModelFactory(ABC):
     """Factory for creating MoleculePredictionModel instances."""
 
     def __init__(
         self,
-        output_dim: int,  # From dataloader
+        output_dim: int,
         default_rdkit_features=None,
         default_chemberta_dim=600,
         default_hidden_dim=256,
@@ -102,8 +106,6 @@ class MoleculeEmbeddingPredictionModelFactory(ModelFactory):
         self.default_optimizer_class = default_optimizer_class
 
     def create_model(self, params):
-        """Creates a MoleculePredictionModel with MoleculeEmbeddingModel."""
-        # 1) MPNN Configuration
         mpnn = ConfiguredMPNN(
             output_dim=self.default_hidden_dim,
             d_h=params.get("d_h", 300),
@@ -112,8 +114,11 @@ class MoleculeEmbeddingPredictionModelFactory(ModelFactory):
             undirected=True,
         )
 
-        # 2) Embedding Model (Base)
         rdkit_featurizer = RDKitFeaturizer()
+
+        use_rdkit = params.get("use_rdkit", True)
+        use_chembert = params.get("use_chembert", True)
+
         embedding_model = MoleculeEmbeddingModel(
             chemprop_mpnn=mpnn,
             rdkit_featurizer=rdkit_featurizer,
@@ -122,19 +127,18 @@ class MoleculeEmbeddingPredictionModelFactory(ModelFactory):
             ),
             chemberta_dim=params.get("chemberta_dim", self.default_chemberta_dim),
             hidden_dim=params.get("hidden_dim", self.default_hidden_dim),
+            use_rdkit=use_rdkit,
+            use_chembert=use_chembert,
         )
 
-        # 3) Prediction Model (with FNN)
         model = MoleculePredictionModel(
             embedding_model=embedding_model,
-            output_dim=self.output_dim,  # From dataloader
+            output_dim=self.output_dim,
             hidden_dim=params.get("hidden_dim", self.default_hidden_dim),
         )
-
         return model
 
     def create_optimizer(self, model, params):
-        """Creates an optimizer for the MoleculePredictionModel."""
         return self.default_optimizer_class(
             model.parameters(),
             lr=params.get("lr", 0.001),

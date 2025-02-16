@@ -21,13 +21,13 @@ train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
 val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
 
 train_dataset = PolymerBertDataset(
-    data=train_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1, 2]
+    data=train_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1]
 )
 val_dataset = PolymerBertDataset(
-    data=val_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1, 2]
+    data=val_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1]
 )
 test_dataset = PolymerBertDataset(
-    data=test_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1, 2]
+    data=test_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1]
 )
 
 
@@ -55,6 +55,8 @@ search_space = {
     "depth": [2, 3],
     "dropout": [0.1, 0.3],
     "weight_decay": [0.0, 0.01],
+    "use_rdkit": [True, False],
+    "use_chembert": [False, True],
 }
 
 # Get output_dim from dataset or dataloader

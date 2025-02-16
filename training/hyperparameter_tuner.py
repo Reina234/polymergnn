@@ -27,6 +27,7 @@ class HyperparameterTuner:
         max_trials: int = None,
         use_tensorboard: bool = True,
         save_results_dir: str = "results/hparams_tuning",
+        trial_name: str = "trial",
         shared_writer: Optional[SummaryWriter] = None,
     ):
         """
@@ -51,6 +52,7 @@ class HyperparameterTuner:
         self.max_trials = max_trials
         self.use_tensorboard = use_tensorboard
         self.save_results_dir = save_results_dir
+        self.trial_name = trial_name
         os.makedirs(save_results_dir, exist_ok=True)
         self.shared_writer = shared_writer
 
@@ -84,7 +86,7 @@ class HyperparameterTuner:
                 test_loader=self.test_loader,
                 device=self.device,
                 hyperparams=params,
-                log_dir=f"logs/trial_{i+1}",
+                log_dir=f"logs/{self.trial_name}",
                 use_tensorboard=self.use_tensorboard,
                 save_results_dir=self.save_results_dir,
                 track_learning_curve=True,
