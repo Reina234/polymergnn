@@ -116,7 +116,7 @@ class PolymerDataset(ABC, Dataset):
         columns: Optional[List[int]],
     ):
         if columns:
-            return transformer.fit_transform(data[columns].values)
+            return transformer.transform(data[columns].values)
         return None
 
     def __len__(self):

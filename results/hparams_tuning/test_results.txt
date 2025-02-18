@@ -19,3 +19,642 @@ Metrics/RMSE: 0.517274
 Metrics/MAE: 0.367194
 Metrics/MAPE: 206.878400
 Metrics/RMSE: 0.464059
+Metrics/MAE: 0.424232
+Metrics/MAPE: 416.494608
+Metrics/RMSE: 0.543320
+Metrics/MAE: 0.741700
+Metrics/MAPE: 201.934528
+Metrics/RMSE: 0.901618
+Metrics/MAE: 0.309693
+Metrics/MAPE: 161.300790
+Metrics/RMSE: 0.379430
+Metrics/MAE: 5.199013
+Metrics/MAPE: 63.346666
+Metrics/RMSE: 6.277020
+{"Class": "MoleculeTrainer", "model": "MoleculePredictionModel", "optimiser": "Adam", "output_transformer": "MinMaxScalerTransform", "train_loader": "DataLoader", "val_loader": "DataLoader", "test_loader": "DataLoader", "device": "device", "loss_strategy": "MSELossStrategy", "hyperparams": "dict", "evaluation_metrics": "list", "num_batches": "int", "track_learning_curve": "bool", "figure_size": "tuple", "data_transformer": "MinMaxScalerTransform", "molecule_featuriser": "FGMembershipMol2MolGraph"}
+Metrics/MAE: 4.742062
+{"Class": "MoleculeTrainer", "model": "MoleculePredictionModel", "optimiser": "Adam", "output_transformer": "MinMaxScalerTransform", "train_loader": "DataLoader", "val_loader": "DataLoader", "test_loader": "DataLoader", "device": "device", "loss_strategy": "MSELossStrategy", "hyperparams": "dict", "evaluation_metrics": "list", "num_batches": "int", "track_learning_curve": "bool", "figure_size": "tuple", "data_transformer": "MinMaxScalerTransform", "molecule_featuriser": "FGMembershipMol2MolGraph"}
+Metrics/MAPE: 80.946273
+{"Class": "MoleculeTrainer", "model": "MoleculePredictionModel", "optimiser": "Adam", "output_transformer": "MinMaxScalerTransform", "train_loader": "DataLoader", "val_loader": "DataLoader", "test_loader": "DataLoader", "device": "device", "loss_strategy": "MSELossStrategy", "hyperparams": "dict", "evaluation_metrics": "list", "num_batches": "int", "track_learning_curve": "bool", "figure_size": "tuple", "data_transformer": "MinMaxScalerTransform", "molecule_featuriser": "FGMembershipMol2MolGraph"}
+Metrics/RMSE: 5.813815
+=== Test Run Summary ===
+{"Class": "MoleculeTrainer", "model": "MoleculePredictionModel", "optimiser": "Adam", "output_transformer": "MinMaxScalerTransform", "train_loader": "DataLoader", "val_loader": "DataLoader", "test_loader": "DataLoader", "device": "device", "loss_strategy": "MSELossStrategy", "hyperparams": "dict", "evaluation_metrics": "list", "num_batches": "int", "track_learning_curve": "bool", "figure_size": "tuple", "data_transformer": "MinMaxScalerTransform", "molecule_featuriser": "FGMembershipMol2MolGraph"}
+
+--- Test Metrics ---
+Metrics/MAE: 5.881912
+Metrics/MAPE: 130.197239
+Metrics/RMSE: 7.604194
+==================================================
+
+=== Test Run Summary ===
+{"Class": "MoleculeTrainer", "model": "MoleculePredictionModel", "optimiser": "Adam", "output_transformer": "MinMaxScalerTransform", "train_loader": "DataLoader", "val_loader": "DataLoader", "test_loader": "DataLoader", "device": "device", "loss_strategy": "MSELossStrategy", "hyperparams": "dict", "evaluation_metrics": "list", "num_batches": "int", "track_learning_curve": "bool", "figure_size": "tuple", "data_transformer": "MinMaxScalerTransform", "molecule_featuriser": "FGMembershipMol2MolGraph"}
+
+--- Test Metrics ---
+Metrics/MAE: 5.888251
+Metrics/MAPE: 156.953907
+Metrics/RMSE: 7.623327
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: FGMembershipMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 10
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+
+--- Test Metrics ---
+Metrics/MAE: 5.576062
+Metrics/MAPE: 466.616011
+Metrics/RMSE: 7.235959
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: FGMembershipMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 10
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.01
+
+--- Test Metrics ---
+Metrics/MAE: 5.341438
+Metrics/MAPE: 681.704426
+Metrics/RMSE: 6.914232
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 10
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+
+--- Test Metrics ---
+Metrics/MAE: 5.100864
+Metrics/MAPE: 697.495270
+Metrics/RMSE: 6.602724
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+
+--- Test Metrics ---
+Metrics/MAE: 5.974182
+Metrics/MAPE: 114.447832
+Metrics/RMSE: 7.743752
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.01
+
+--- Test Metrics ---
+Metrics/MAE: 5.114149
+Metrics/MAPE: 827.814007
+Metrics/RMSE: 6.607658
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: True
+weight_decay: 0.0
+
+--- Test Metrics ---
+Metrics/MAE: 3.704224
+Metrics/MAPE: 92.076159
+Metrics/RMSE: 5.074748
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: True
+weight_decay: 0.01
+
+--- Test Metrics ---
+Metrics/MAE: 5.414870
+Metrics/MAPE: 161.880434
+Metrics/RMSE: 7.043948
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: True
+use_rdkit: False
+weight_decay: 0.0
+
+--- Test Metrics ---
+Metrics/MAE: 6.107202
+Metrics/MAPE: 762.739897
+Metrics/RMSE: 7.211698
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 600
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+
+--- Test Metrics ---
+Metrics/MAE: 5.156656
+Metrics/MAPE: 392.343998
+Metrics/RMSE: 6.735737
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 600
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+batch_size: 5
+
+--- Test Metrics ---
+Metrics/MAE: 5.726620
+Metrics/MAPE: 121.016240
+Metrics/RMSE: 7.462161
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 600
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+batch_size: 5
+
+--- Test Metrics ---
+Metrics/MAE: 4.951429
+Metrics/MAPE: 432.663345
+Metrics/RMSE: 6.458416
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 600
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.01
+batch_size: 5
+
+--- Test Metrics ---
+Metrics/MAE: 4.875444
+Metrics/MAPE: 982.831383
+Metrics/RMSE: 6.222624
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 600
+depth: 2
+dropout: 0.1
+epochs: 30
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+batch_size: 10
+
+--- Test Metrics ---
+Metrics/MAE: 4.925916
+Metrics/MAPE: 494.809914
+Metrics/RMSE: 6.430809
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: MinMaxScalerTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: MinMaxScalerTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 600
+depth: 2
+dropout: 0.1
+epochs: 30
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.01
+batch_size: 10
+
+--- Test Metrics ---
+Metrics/MAE: 5.199048
+Metrics/MAPE: 765.161467
+Metrics/RMSE: 6.722873
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: NoDataTransform
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: NoDataTransform
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 30
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+batch_size: 32
+
+--- Test Metrics ---
+Metrics/MAE: 2.819683
+Metrics/MAPE: 453.219128
+Metrics/RMSE: 3.448452
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: StandardScaler
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: StandardScaler
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 30
+hidden_dim: 128
+lr: 0.001
+use_chembert: False
+use_rdkit: False
+weight_decay: 0.0
+batch_size: 32
+
+--- Test Metrics ---
+Metrics/MAE: 2.605859
+Metrics/MAPE: 303.591299
+Metrics/RMSE: 3.110664
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: StandardScaler
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: StandardScaler
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: True
+use_rdkit: True
+weight_decay: 0.0
+batch_size: 32
+
+--- Test Metrics ---
+Metrics/MAE: 1.212292
+Metrics/MAPE: 122.353888
+Metrics/RMSE: 1.731671
+==================================================
+
+=== Test Run Summary ===
+class: MoleculeTrainer
+model: MultiHeadMoleculePredictionModel
+optimiser: Adam
+output_transformer: StandardScaler
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+device: device
+loss_strategy: MSELossStrategy
+hyperparams: dict
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+data_transformer: StandardScaler
+molecule_featuriser: SimpleMol2MolGraph
+d_h: 300
+depth: 2
+dropout: 0.1
+epochs: 50
+hidden_dim: 128
+lr: 0.001
+use_chembert: True
+use_rdkit: True
+weight_decay: 0.01
+batch_size: 32
+
+--- Test Metrics ---
+Metrics/MAE: 1.195639
+Metrics/MAPE: 87.215990
+Metrics/RMSE: 1.832095
+==================================================
+

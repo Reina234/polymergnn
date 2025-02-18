@@ -43,7 +43,9 @@ class ConfiguredMPNN(nn.Module):
         self.model = MPNN(
             message_passing=self.mp,
             agg=self.aggregation_method,
-            predictor=RegressionFFN(hidden_dim=self.d_h, n_tasks=self.output_dim),
+            predictor=RegressionFFN(
+                input_dim=self.d_h, hidden_dim=self.d_h, n_tasks=self.output_dim
+            ),
         )
 
     def forward(self, batch_mol_graph: BatchMolGraph):

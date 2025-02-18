@@ -1,10 +1,15 @@
 from training.hyperparameter_tuner import HyperparameterTuner
 from training.model_factory import MoleculeEmbeddingPredictionModelFactory
 import torch
-
+from tools.dataset_transformer import (
+    MinMaxScalerTransform,
+    NoDataTransform,
+    StandardScalerTransform,
+)
 import torch
 import pandas as pd
 from training.trainer import MoleculeTrainer
+from tools.mol_to_molgraph import SimpleMol2MolGraph, FGMembershipMol2MolGraph
 from sklearn.model_selection import train_test_split
 from training.batched_dataset import PolymerBertDataset
 from tools.smiles_transformers import NoSmilesTransform
@@ -21,13 +26,28 @@ train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
 val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
 
 train_dataset = PolymerBertDataset(
-    data=train_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1]
+    data=train_df,
+    monomer_smiles_transformer=NoSmilesTransform(),
+    mol_to_molgraph=SimpleMol2MolGraph(),
+    target_columns=[1, 2],
+    target_transformer=StandardScalerTransform(),
+    is_train=True,
 )
+
+target_transformer = train_dataset.target_transformer
 val_dataset = PolymerBertDataset(
-    data=val_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1]
+    data=val_df,
+    monomer_smiles_transformer=NoSmilesTransform(),
+    mol_to_molgraph=SimpleMol2MolGraph(),
+    target_columns=[1, 2],
+    target_transformer=target_transformer,
 )
 test_dataset = PolymerBertDataset(
-    data=test_df, monomer_smiles_transformer=NoSmilesTransform(), target_columns=[1]
+    data=test_df,
+    monomer_smiles_transformer=NoSmilesTransform(),
+    mol_to_molgraph=SimpleMol2MolGraph(),
+    target_columns=[1, 2],
+    target_transformer=target_transformer,
 )
 
 
@@ -45,7 +65,6 @@ test_loader = DataLoader(
     test_dataset, batch_size=32, shuffle=False, collate_fn=test_dataset.collate_fn
 )
 
-
 # Hyperparameter search space
 search_space = {
     "lr": [0.001, 0.0005],
@@ -56,27 +75,30 @@ search_space = {
     "dropout": [0.1, 0.3],
     "weight_decay": [0.0, 0.01],
     "use_rdkit": [True, False],
-    "use_chembert": [False, True],
+    "use_chembert": [True, False],
 }
 
 # Get output_dim from dataset or dataloader
 output_dim = train_loader.dataset.targets.shape[1]  # Example for regression
 
 # Use the new factory with output_dim
-molecule_factory = MoleculeEmbeddingPredictionModelFactory(output_dim=output_dim)
+molecule_factory = MoleculeEmbeddingPredictionModelFactory(
+    output_dim=output_dim, multi_head=True
+)
 
 # Run Tuning
 tuner = HyperparameterTuner(
     model_factory=molecule_factory,
-    train_loader=train_loader,
-    val_loader=val_loader,
-    test_loader=test_loader,
+    train_dataset=train_dataset,
+    val_dataset=val_dataset,
+    test_dataset=test_dataset,
     device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     trainer=MoleculeTrainer,
     search_space=search_space,
     max_trials=5,
     use_tensorboard=True,
     save_results_dir="results/hparams_tuning",
+    additional_info={"batch_size": 32},
 )
 results = tuner.run()
 

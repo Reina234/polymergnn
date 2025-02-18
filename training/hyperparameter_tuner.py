@@ -3,12 +3,14 @@ import os
 import logging
 from typing import Optional
 import pandas as pd
-from torch.utils.data import DataLoader
+
+# from torch.utils.data import DataLoader
 from sklearn.model_selection import ParameterGrid
 from training.trainer import Trainer  # Or your Trainer subclass (e.g., MoleculeTrainer)
 from training.loss import MSELossStrategy
 from training.model_factory import ModelFactory
 from torch.utils.tensorboard import SummaryWriter
+from training.batched_dataset import PolymerDataset
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +20,9 @@ class HyperparameterTuner:
     def __init__(
         self,
         model_factory: ModelFactory,
-        train_loader: DataLoader,
-        val_loader: DataLoader,
-        test_loader: DataLoader,
+        train_dataset: PolymerDataset,
+        val_dataset: PolymerDataset,
+        test_dataset: PolymerDataset,
         device: torch.device,
         trainer: Trainer,  # Expecting a Trainer subclass
         search_space: dict,
@@ -29,6 +31,7 @@ class HyperparameterTuner:
         save_results_dir: str = "results/hparams_tuning",
         trial_name: str = "trial",
         shared_writer: Optional[SummaryWriter] = None,
+        additional_info: Optional[dict] = None,
     ):
         """
         Args:
@@ -42,10 +45,13 @@ class HyperparameterTuner:
             save_results_dir: Directory for results.
             shared_writer: A shared SummaryWriter for all trials (optional).
         """
+
+        self.output_dim = train_dataset.targets.shape[1]
         self.model_factory = model_factory
-        self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.test_loader = test_loader
+
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
+        self.test_dataset = test_dataset
         self.device = device
         self.trainer = trainer
         self.search_space = search_space
@@ -55,6 +61,7 @@ class HyperparameterTuner:
         self.trial_name = trial_name
         os.makedirs(save_results_dir, exist_ok=True)
         self.shared_writer = shared_writer
+        self.additional_info = additional_info
 
     def run(self):
         param_grid = list(ParameterGrid(self.search_space))
@@ -76,14 +83,18 @@ class HyperparameterTuner:
             )
             loss_strategy = MSELossStrategy()
 
+            batch_size = params.get("batch_size", 32)
+            if self.additional_info:
+                params.update(self.additional_info)
             # Instantiate the Trainer with shared tensorboard writer and updated flush/close settings.
             trainer_instance = self.trainer(
                 model=model,
                 optimiser=optimizer,
                 loss_strategy=loss_strategy,
-                train_loader=self.train_loader,
-                val_loader=self.val_loader,
-                test_loader=self.test_loader,
+                train_dataset=self.train_dataset,
+                val_dataset=self.val_dataset,
+                test_dataset=self.test_dataset,
+                batch_size=batch_size,
                 device=self.device,
                 hyperparams=params,
                 log_dir=f"logs/{self.trial_name}",
@@ -93,6 +104,7 @@ class HyperparameterTuner:
                 writer=self.shared_writer,
                 flush_tensorboard_each_epoch=False,
                 close_writer_on_finish=False,
+                additional_info=params,
             )
 
             trainer_instance.train(epochs=params["epochs"])

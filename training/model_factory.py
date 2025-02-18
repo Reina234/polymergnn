@@ -4,7 +4,10 @@ from typing import Any, Dict
 from modules.configured_mpnn import ConfiguredMPNN
 from models.molecule_embedding_model import MoleculeEmbeddingModel
 from featurisers.molecule_featuriser import RDKitFeaturizer
-from models.molecule_prediction_model import MoleculePredictionModel
+from models.molecule_prediction_model import (
+    MoleculePredictionModel,
+    MultiHeadMoleculePredictionModel,
+)
 
 
 class ModelFactory(ABC):
@@ -86,12 +89,14 @@ class MoleculeEmbeddingPredictionModelFactory(ABC):
     def __init__(
         self,
         output_dim: int,
+        multi_head: bool = False,
         default_rdkit_features=None,
         default_chemberta_dim=600,
         default_hidden_dim=256,
         default_optimizer_class=torch.optim.Adam,
     ):
         self.output_dim = output_dim
+        self.multi_head = multi_head
         self.default_rdkit_features = default_rdkit_features or [
             "MolWt",
             "MolLogP",
@@ -130,12 +135,18 @@ class MoleculeEmbeddingPredictionModelFactory(ABC):
             use_rdkit=use_rdkit,
             use_chembert=use_chembert,
         )
-
-        model = MoleculePredictionModel(
-            embedding_model=embedding_model,
-            output_dim=self.output_dim,
-            hidden_dim=params.get("hidden_dim", self.default_hidden_dim),
-        )
+        if self.output_dim == 1 or not self.multi_head:
+            model = MoleculePredictionModel(
+                embedding_model=embedding_model,
+                output_dim=self.output_dim,
+                hidden_dim=params.get("hidden_dim", self.default_hidden_dim),
+            )
+        else:
+            model = MultiHeadMoleculePredictionModel(
+                embedding_model=embedding_model,
+                output_dim=self.output_dim,
+                hidden_dim=params.get("hidden_dim", self.default_hidden_dim),
+            )
         return model
 
     def create_optimizer(self, model, params):

@@ -12,6 +12,9 @@ from sklearn.metrics import (
     mean_absolute_percentage_error,
     r2_score,
 )
+from torch.utils.data import DataLoader
+import json
+from training.batched_dataset import PolymerDataset
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,9 +27,10 @@ class Trainer(ABC):
         self,
         model: torch.nn.Module,
         optimiser: torch.optim.Optimizer,
-        train_loader: torch.utils.data.DataLoader,
-        val_loader: Optional[torch.utils.data.DataLoader],
-        test_loader: Optional[torch.utils.data.DataLoader],
+        train_dataset: PolymerDataset,
+        val_dataset: Optional[PolymerDataset],
+        test_dataset: Optional[PolymerDataset],
+        batch_size: int,
         device: torch.device,
         loss_strategy=None,
         hyperparams: dict = None,
@@ -39,19 +43,67 @@ class Trainer(ABC):
         writer: Optional[SummaryWriter] = None,
         flush_tensorboard_each_epoch: bool = False,
         close_writer_on_finish: bool = True,
+        additional_info: Optional[Dict[str, str]] = None,
     ):
         self.model = model
         self.optimiser = optimiser
-        self.train_loader = train_loader
-        self.val_loader = val_loader
-        self.test_loader = test_loader
+        self.output_transformer = train_dataset.target_transformer
+        self.train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            collate_fn=train_dataset.collate_fn,
+        )
+        self.val_loader = (
+            DataLoader(
+                val_dataset,
+                batch_size=batch_size,
+                shuffle=False,
+                collate_fn=val_dataset.collate_fn,
+            )
+            if val_dataset
+            else None
+        )
+        self.test_loader = (
+            DataLoader(
+                test_dataset,
+                batch_size=batch_size,
+                shuffle=False,
+                collate_fn=test_dataset.collate_fn,
+            )
+            if test_dataset
+            else None
+        )
+
         self.device = device
         self.loss_strategy = loss_strategy
         self.hyperparams = hyperparams or {}
         self.evaluation_metrics = evaluation_metrics or ["MAE", "MAPE", "RMSE"]
-        self.num_batches = len(train_loader) if train_loader else 0
+        self.num_batches = len(self.train_loader) if self.train_loader else 0
         self.track_learning_curve = track_learning_curve
         self.figure_size = figure_size
+        self.summary_line = self.generate_run_summary(
+            self,
+            model=model,
+            optimiser=optimiser,
+            loss_strategy=loss_strategy,
+            device=device,
+            num_batches=self.num_batches,
+            data_transformer=train_dataset.target_transformer,
+            molecule_featuriser=train_dataset.mol_to_molgraph,
+        )
+
+        if additional_info:
+            json_info = json.dumps(
+                additional_info, indent=None, separators=(", ", ": ")
+            )
+            self.summary_line = {
+                **json.loads(self.summary_line),
+                **json.loads(json_info),
+            }
+            self.summary_line = json.dumps(
+                self.summary_line, indent=None, separators=(", ", ": ")
+            )
 
         os.makedirs(save_results_dir, exist_ok=True)
         self.save_results_dir = save_results_dir
@@ -114,6 +166,7 @@ class Trainer(ABC):
         avg_loss = epoch_loss / self.num_batches
         all_preds = np.concatenate(all_preds)
         all_labels = np.concatenate(all_labels)
+        all_labels, all_preds = self.inverse_transform(all_labels, all_preds)
         train_metrics = self.compute_metrics(all_labels, all_preds)
 
         metrics_dict = {"Training Loss": avg_loss, **train_metrics}
@@ -140,12 +193,22 @@ class Trainer(ABC):
         avg_loss = total_loss / len(loader)
         all_preds = np.concatenate(all_preds)
         all_labels = np.concatenate(all_labels)
+        all_labels, all_preds = self.inverse_transform(all_labels, all_preds)
         metrics = self.compute_metrics(all_labels, all_preds)
 
         metrics_dict = {f"{mode} Loss": avg_loss, **metrics}
         self._write_scalar_to_tensorboard(metrics_dict, epoch)
         self._add_to_learning_curve(avg_loss, is_train=False)
         return avg_loss, metrics
+
+    def inverse_transform(
+        self, labels: np.ndarray, preds: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        if self.output_transformer is None:
+            return labels, preds
+        return self.output_transformer.inverse_transform(
+            labels
+        ), self.output_transformer.inverse_transform(preds)
 
     def compute_metrics(
         self, labels: np.ndarray, preds: np.ndarray
@@ -240,22 +303,51 @@ class Trainer(ABC):
         logger.info("Training Completed.")
 
     def test(self):
-        """Tests the model using the test loader and records final metrics."""
         if not self.test_loader:
             logger.warning("No test loader provided.")
             return
+
         final_loss, test_metrics = self.evaluate(self.test_loader, epoch=0, mode="Test")
         self.final_test_loss = final_loss
         self.final_test_metrics = test_metrics
 
+        summary_lines = []
+        summary_dict = json.loads(self.summary_line)
+        for key, value in summary_dict.items():
+            summary_lines.append(f"{key}: {value}")
+
         results_path = os.path.join(self.save_results_dir, "test_results.txt")
         with open(results_path, "a", encoding="utf-8") as f:
+            f.write("=== Test Run Summary ===\n")
+            f.write("\n".join(summary_lines) + "\n\n")
+            f.write("--- Test Metrics ---\n")
             for k, v in test_metrics.items():
-                f.write("{k}: {v:.6f}\n".format(k=k, v=v))
+                f.write(f"{k}: {v:.6f}\n")
+            f.write("=" * 50 + "\n\n")
+
         logger.info("Test results saved to %s", results_path)
 
+    @staticmethod
+    def generate_run_summary(instance, **kwargs) -> str:
+        summary = {}
+
+        summary["class"] = instance.__class__.__name__
+
+        for attr_name, attr_value in vars(instance).items():
+            if hasattr(attr_value, "__class__"):
+                summary[attr_name] = attr_value.__class__.__name__
+            else:
+                summary[attr_name] = repr(attr_value)
+
+        for name, value in kwargs.items():
+            if hasattr(value, "__class__"):
+                summary[name] = value.__class__.__name__
+            else:
+                summary[name] = repr(value)
+
+        return json.dumps(summary, indent=None, separators=(", ", ": "))
+
     def plot_learning_curve(self):
-        """Plots the learning curve."""
         import matplotlib.pyplot as plt
 
         plt.figure(figsize=self.figure_size)

@@ -13,6 +13,12 @@ class Mol2MolGraph(ABC):
         pass
 
 
+class SimpleMol2MolGraph(Mol2MolGraph):
+    def convert(self, mol) -> MolGraph:
+        featuriser = SimpleMoleculeMolGraphFeaturizer()
+        return featuriser(mol)
+
+
 class FGMembershipMol2MolGraph(Mol2MolGraph):
 
     def __init__(self, fg_detector=ErtlAlgorithm()):

@@ -14,7 +14,7 @@ from chemprop.data import BatchMolGraph, MolGraph
 from tools.smiles_transformers import SmilesTransformer, NoSmilesTransform
 from tools.smiles_to_mol import Smiles2Mol
 from abc import ABC, abstractmethod
-from tools.mol_to_molgraph import FGMembershipMol2MolGraph
+from tools.mol_to_molgraph import Mol2MolGraph, FGMembershipMol2MolGraph
 from featurisers.molecule_featuriser import RDKitFeaturizer
 from featurisers.chemberta_tokeniser import ChemBERTaEmbedder
 from tools.utils import stack_tensors
@@ -28,15 +28,17 @@ class PolymerDataset(ABC, Dataset):
         data: pd.DataFrame,
         monomer_smiles_transformer: SmilesTransformer,
         solvent_smiles_transformer: SmilesTransformer,
+        mol_to_molgraph: Mol2MolGraph,
         monomer_smiles_column: int = 0,
         solvent_smiles_column: Optional[int] = None,
         feature_columns: Optional[List[int]] = None,
         target_columns: Optional[List[int]] = None,
         feature_transformer: DatasetTransformer = NoDataTransform(),
         target_transformer: DatasetTransformer = StandardScalerTransform(),
+        is_train: bool = False,
     ):
         self.data = data
-
+        self.mol_to_molgraph = mol_to_molgraph
         self.monomer_smiles_lists = (
             self.data.iloc[:, monomer_smiles_column]
             .apply(lambda x: [s.strip() for s in x.split(",")])
@@ -74,6 +76,11 @@ class PolymerDataset(ABC, Dataset):
             ]
         self.feature_columns = feature_columns
 
+        if is_train:
+            self.feature_transformer, self.target_transformer = (
+                self.fit_test_train_transformers()
+            )
+
         self.features = self._apply_transform(
             data=self.data,
             transformer=self.feature_transformer,
@@ -105,6 +112,32 @@ class PolymerDataset(ABC, Dataset):
             for i, monomer_list in enumerate(self.monomer_smiles_lists)
         ]
 
+    def fit_transform(
+        self,
+        data: pd.DataFrame,
+        transformer: DatasetTransformer,
+        columns: Optional[List[int]],
+    ):
+        if not transformer:
+            return None
+        if columns:
+            scaler = transformer.fit(data[columns].values)
+            return scaler
+        return None
+
+    def fit_test_train_transformers(self):
+        feature_scalar = self.fit_transform(
+            data=self.data,
+            transformer=self.feature_transformer,
+            columns=self.feature_columns,
+        )
+        transform_scalar = self.fit_transform(
+            data=self.data,
+            transformer=self.target_transformer,
+            columns=self.target_columns,
+        )
+        return feature_scalar, transform_scalar
+
     @abstractmethod
     def _convert_mols_to_molgraph(self) -> List[List[MolGraph]]:
         pass
@@ -115,8 +148,10 @@ class PolymerDataset(ABC, Dataset):
         transformer: DatasetTransformer,
         columns: Optional[List[int]],
     ):
+        if not transformer:
+            return None
         if columns:
-            return transformer.fit_transform(data[columns].values)
+            return transformer.transform(data[columns].values)
         return None
 
     def __len__(self):
@@ -157,31 +192,35 @@ class PolymerDataset(ABC, Dataset):
 
 
 class PolymerBertDataset(PolymerDataset):
+
     def __init__(
         self,
         data: pd.DataFrame,
         monomer_smiles_transformer: SmilesTransformer,
         solvent_smiles_transformer: SmilesTransformer = NoSmilesTransform(),
+        mol_to_molgraph: Mol2MolGraph = FGMembershipMol2MolGraph(),
         monomer_smiles_column: int = 0,
         solvent_smiles_column: Optional[int] = None,
         feature_columns: Optional[List[int]] = None,
         target_columns: Optional[List[int]] = None,
         feature_transformer: DatasetTransformer = NoDataTransform(),
         target_transformer: DatasetTransformer = StandardScalerTransform(),
+        is_train: bool = False,
     ):
-        self.mol_to_molgraph = FGMembershipMol2MolGraph()
         self.chemberta_embedder = ChemBERTaEmbedder()
         self.rdkit_featuriser = RDKitFeaturizer()
         super().__init__(
             data=data,
             monomer_smiles_transformer=monomer_smiles_transformer,
             solvent_smiles_transformer=solvent_smiles_transformer,
+            mol_to_molgraph=mol_to_molgraph,
             monomer_smiles_column=monomer_smiles_column,
             solvent_smiles_column=solvent_smiles_column,
             feature_columns=feature_columns,
             target_columns=target_columns,
             feature_transformer=feature_transformer,
             target_transformer=target_transformer,
+            is_train=is_train,
         )
 
     def _convert_mols_to_molgraph(self):
