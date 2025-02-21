@@ -71,3 +71,21 @@ class RDKitFeaturizer:
     def get_feature_map(self) -> dict:
         """Return the RDKit feature name-to-index mapping."""
         return self.feature_map
+
+    def compute_hbond_matrix(self, rdkit_features_list):
+        """
+        torch.Tensor: A square matrix of shape (n, n), where n = len(rdkit_features_list).
+        """
+        donor_idx = self.feature_map["NumHDonors"]
+        acceptor_idx = self.feature_map["NumHAcceptors"]
+        n = len(rdkit_features_list)
+        hbond_matrix = torch.zeros(n, n, dtype=torch.float32)
+        for i in range(n):
+            donors_i = rdkit_features_list[i][donor_idx].item()
+            acceptors_i = rdkit_features_list[i][acceptor_idx].item()
+            for j in range(n):
+                donors_j = rdkit_features_list[j][donor_idx].item()
+                acceptors_j = rdkit_features_list[j][acceptor_idx].item()
+                hbond_value = max(acceptors_i, donors_j) + max(donors_i, acceptors_j)
+                hbond_matrix[i, j] = hbond_value
+        return hbond_matrix
