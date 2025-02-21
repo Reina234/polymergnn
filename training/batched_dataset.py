@@ -10,6 +10,7 @@ from tools.dataset_transformer import (
     NoDataTransform,
     StandardScalerTransform,
 )
+from tools.edge_creation import BondHBondEdgeCreator
 from chemprop.data import BatchMolGraph, MolGraph
 from tools.smiles_transformers import SmilesTransformer, NoSmilesTransform
 from tools.smiles_to_mol import Smiles2Mol
@@ -282,4 +283,127 @@ class PolymerBertDataset(PolymerDataset):
             "polymer_feats": stack_tensors(polymer_feats_list),
             "polymer_mapping": polymer_mapping,  # e.g. [0,0,0,1,1,...]
             "labels": stack_tensors(labels_list),
+        }
+
+
+class PolymerGNNDataset(PolymerDataset):
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        monomer_smiles_transformer: SmilesTransformer,
+        solvent_smiles_transformer: SmilesTransformer = NoSmilesTransform(),
+        mol_to_molgraph: Mol2MolGraph = FGMembershipMol2MolGraph(),
+        monomer_smiles_column: int = 0,
+        solvent_smiles_column: Optional[int] = None,
+        feature_columns: Optional[List[int]] = None,
+        target_columns: Optional[List[int]] = None,
+        feature_transformer: DatasetTransformer = NoDataTransform(),
+        target_transformer: DatasetTransformer = StandardScalerTransform(),
+        is_train: bool = False,
+    ):
+        self.edge_index_creator = BondHBondEdgeCreator()
+        self.chemberta_embedder = ChemBERTaEmbedder()
+        self.rdkit_featuriser = RDKitFeaturizer()
+        super().__init__(
+            data=data,
+            monomer_smiles_transformer=monomer_smiles_transformer,
+            solvent_smiles_transformer=solvent_smiles_transformer,
+            mol_to_molgraph=mol_to_molgraph,
+            monomer_smiles_column=monomer_smiles_column,
+            solvent_smiles_column=solvent_smiles_column,
+            feature_columns=feature_columns,
+            target_columns=target_columns,
+            feature_transformer=feature_transformer,
+            target_transformer=target_transformer,
+            is_train=is_train,
+        )
+
+    def _convert_mols_to_molgraph(self):
+        molgraphs = [
+            [self.mol_to_molgraph.convert(mol) for mol in mols] for mols in self.mols
+        ]
+
+        return molgraphs
+
+    def __getitem__(self, idx):
+        mols = self.mols[idx]
+        smiles_list = self.smiles_lists[idx]
+        chemberta_vals = [
+            self.chemberta_embedder.embed(smiles) for smiles in smiles_list
+        ]
+        rdkit_list = [self.rdkit_featuriser.featurise(mol) for mol in mols]
+        edge_indeces, edge_attr = (
+            self.edge_index_creator.create_edge_indeces_and_attributes(
+                rdkit_list=rdkit_list, featuriser=self.rdkit_featuriser
+            )
+        )
+        molgraphs, features, targets = self._get_default_items(idx=idx)
+        return (
+            idx,
+            molgraphs,
+            chemberta_vals,
+            rdkit_list,
+            features,
+            targets,
+            edge_indeces,
+            edge_attr,
+        )
+
+    @staticmethod
+    def collate_fn(batch):
+        all_molgraphs = []
+        chemberta_flat = []
+        rdkit_flat = []
+        system_indices = []
+        polymer_mapping = []
+        polymer_feats_list = []
+        labels_list = []
+
+        edge_indices_list = []
+        edge_attr_list = []
+
+        node_offset = 0  # Keeps track of node indices across polymers
+
+        for sys_idx, (
+            _,
+            molgraphs,
+            chemberta_vals,
+            rdkit_list,
+            poly_feats,
+            targets,
+            edge_indices,
+            edge_attr,
+        ) in enumerate(batch):
+
+            num_monomers = len(molgraphs)
+
+            adjusted_edge_indices = edge_indices + node_offset
+            edge_indices_list.append(adjusted_edge_indices)
+            edge_attr_list.append(edge_attr)
+
+            for m in range(num_monomers):
+                all_molgraphs.append(molgraphs[m])
+                chemberta_flat.append(chemberta_vals[m])
+                rdkit_flat.append(rdkit_list[m])
+                system_indices.append(sys_idx)
+                polymer_mapping.append(sys_idx)
+
+            node_offset += num_monomers
+
+            polymer_feats_list.append(poly_feats)
+            labels_list.append(targets)
+
+        batch_mol_graph = BatchMolGraph(all_molgraphs)
+
+        return {
+            "batch_mol_graph": batch_mol_graph,
+            "chemberta_tensor": stack_tensors(chemberta_flat),
+            "rdkit_tensor": stack_tensors(rdkit_flat),
+            "system_indices": system_indices,
+            "polymer_feats": stack_tensors(polymer_feats_list),
+            "polymer_mapping": torch.tensor(polymer_mapping),
+            "labels": stack_tensors(labels_list),
+            "edge_index": torch.cat(edge_indices_list, dim=1),
+            "edge_attr": torch.cat(edge_attr_list, dim=0),
         }
