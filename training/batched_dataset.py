@@ -42,7 +42,7 @@ class PolymerDataset(ABC, Dataset):
         self.mol_to_molgraph = mol_to_molgraph
         self.monomer_smiles_lists = (
             self.data.iloc[:, monomer_smiles_column]
-            .apply(lambda x: [s.strip() for s in x.split(",")])
+            .apply(lambda x: [s.strip() for s in x.split(";")])
             .tolist()
         )
         self.solvent_smiles = (
@@ -362,6 +362,7 @@ class PolymerGNNDataset(PolymerDataset):
 
         edge_indices_list = []
         edge_attr_list = []
+        solvent_labels_list = []
 
         node_offset = 0  # Keeps track of node indices across polymers
 
@@ -378,7 +379,8 @@ class PolymerGNNDataset(PolymerDataset):
 
             num_monomers = len(molgraphs)
 
-            adjusted_edge_indices = edge_indices + node_offset
+            # Adjust edge indices so they don't overlap across polymers
+            adjusted_edge_indices = edge_indices + node_offset  # Shift edge indices
             edge_indices_list.append(adjusted_edge_indices)
             edge_attr_list.append(edge_attr)
 
@@ -387,9 +389,13 @@ class PolymerGNNDataset(PolymerDataset):
                 chemberta_flat.append(chemberta_vals[m])
                 rdkit_flat.append(rdkit_list[m])
                 system_indices.append(sys_idx)
-                polymer_mapping.append(sys_idx)
+                polymer_mapping.append(sys_idx)  # Each polymer has a unique index
 
-            node_offset += num_monomers
+                # Assign solvent labels: Solvent is always the LAST molecule in each polymer
+                solvent_label = 1 if m == (num_monomers - 1) else 0
+                solvent_labels_list.append(solvent_label)
+
+            node_offset += num_monomers  # Increment offset for the next polymer
 
             polymer_feats_list.append(poly_feats)
             labels_list.append(targets)
@@ -406,4 +412,7 @@ class PolymerGNNDataset(PolymerDataset):
             "labels": stack_tensors(labels_list),
             "edge_index": torch.cat(edge_indices_list, dim=1),
             "edge_attr": torch.cat(edge_attr_list, dim=0),
+            "solvent_labels": torch.tensor(solvent_labels_list).unsqueeze(
+                1
+            ),  # Shape (N, 1)
         }

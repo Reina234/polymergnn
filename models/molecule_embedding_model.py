@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import List
+from typing import List, Optional
 from modules.configured_mpnn import ConfiguredMPNN
 from featurisers.molecule_featuriser import RDKitFeaturizer
 
@@ -14,10 +14,13 @@ class MoleculeEmbeddingModel(nn.Module):
         selected_rdkit_features: List[str],
         chemberta_dim: int,
         hidden_dim: int,
+        mpnn_output_dim: Optional[int] = None,
         use_rdkit: bool = True,
         use_chembert: bool = True,
     ):
         super().__init__()
+        if not mpnn_output_dim:
+            mpnn_output_dim = hidden_dim
         self.mpnn = chemprop_mpnn
         self.rdkit_featurizer = rdkit_featurizer if use_rdkit else None
         self.selected_rdkit_features = selected_rdkit_features if use_rdkit else None
@@ -42,7 +45,7 @@ class MoleculeEmbeddingModel(nn.Module):
         self.fusion = nn.Sequential(
             nn.Linear(total_in, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
+            nn.Linear(hidden_dim, mpnn_output_dim),
         )
         self.hidden_dim = hidden_dim
 

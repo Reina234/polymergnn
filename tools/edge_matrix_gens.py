@@ -19,8 +19,8 @@ class BondMatrixCreator:
         n = self.n
         if n is None:
             raise ValueError("n is not set")
-        if n == 2:
-            return torch.zeros(2, 2)
+        if n <= 2:
+            return torch.zeros(n, n)
 
         block = torch.full((n - 1, n - 1), 1 / (n - 1))
         block.fill_diagonal_(0)

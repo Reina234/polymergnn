@@ -27,12 +27,13 @@ class CanonicalSmilesTransform(SmilesTransformer):
 
 class PolymerisationSmilesTransform(SmilesTransformer):
 
-    def _identify_polymer_bond(self):
-        for bond in self.mol.GetBonds():
+    def _identify_polymer_bond(self, mol):
+        for bond in mol.GetBonds():
             if bond.GetBondType() == Chem.BondType.DOUBLE and not bond.IsInRing():
                 atom1, atom2 = bond.GetBeginAtom(), bond.GetEndAtom()
                 if atom1.GetAtomicNum() == 6 and atom2.GetAtomicNum() == 6:
                     return bond
+
         raise ValueError("No suitable polymerizable double bond found in the molecule.")
 
     def transform(self, smiles: str) -> str:
@@ -42,7 +43,7 @@ class PolymerisationSmilesTransform(SmilesTransformer):
 
         rw_mol = Chem.RWMol(mol)
 
-        bond = self._identify_polymer_bond()
+        bond = self._identify_polymer_bond(mol=mol)
         atom1, atom2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
 
         dummy1, dummy2 = Chem.Atom(0), Chem.Atom(0)
