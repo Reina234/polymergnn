@@ -6,9 +6,6 @@ from modules.set_transformer import SetTransformerPooling
 
 
 class HierarchicalFGModel(nn.Module):
-    """Combined the FG components, but this is on a per molecule basis,
-    note that MPNN gives it back in batch"""
-
     def __init__(
         self,
         mpnn_dim: int,
