@@ -61,20 +61,16 @@ class PolymerDataset(ABC, Dataset):
 
         self.smiles_lists = None
         self.mols = None
-
+        self.pipeline_manager = pipeline_manager
         self._combine_smiles()
         if is_train:
-            pipeline_manager.fit(df=self.untransformed_data, log_indexes=log_indexes)
+            self.pipeline_manager.fit(
+                df=self.untransformed_data, log_indexes=log_indexes
+            )
 
-        self.data = pipeline_manager.transform(
+        self.data = self.pipeline_manager.transform(
             df=self.untransformed_data, log_indexes=log_indexes
         )
-        print(self.data.head())
-        print("Before Standard Scaling:")
-        print(self.untransformed_data.iloc[:, self.target_columns].describe())
-
-        print("After Standard Scaling:")
-        print(self.data.iloc[:, self.target_columns].describe())
 
         self.molgraphs = self._convert_mols_to_molgraph()
 

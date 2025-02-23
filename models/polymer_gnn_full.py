@@ -26,31 +26,8 @@ class PolymerGNNSystem(nn.Module):
         gnn_num_heads: int = 4,
         multitask_fnn_hidden_dim: int = 128,
         multitask_fnn_dropout: float = 0.1,
-        config: dict = None,  # Optional dictionary for hyperparameter tuning
     ):
         super().__init__()
-
-        # If `config` is provided, override parameters from config dictionary
-        if config:
-            self.__dict__.update(config)
-
-        # Store hyperparameters for tracking in tuning packages
-        self.hyperparams = {
-            "mpnn_output_dim": mpnn_output_dim,
-            "mpnn_hidden_dim": mpnn_hidden_dim,
-            "mpnn_depth": mpnn_depth,
-            "mpnn_dropout": mpnn_dropout,
-            "molecule_embedding_hidden_dim": molecule_embedding_hidden_dim,
-            "embedding_dim": embedding_dim,
-            "use_rdkit": use_rdkit,
-            "use_chembert": use_chembert,
-            "gnn_hidden_dim": gnn_hidden_dim,
-            "gnn_output_dim": gnn_output_dim,
-            "gnn_dropout": gnn_dropout,
-            "gnn_num_heads": gnn_num_heads,
-            "multitask_fnn_hidden_dim": multitask_fnn_hidden_dim,
-            "multitask_fnn_dropout": multitask_fnn_dropout,
-        }
 
         # Select RDKit Features
         rdkit_features = [
@@ -99,7 +76,6 @@ class PolymerGNNSystem(nn.Module):
             use_chembert=use_chembert,
         )
 
-        # Polymer GNN (Graph Attention Network)
         self.polymer_gnn = GATModule(
             input_dim=embedding_dim,
             hidden_dim=gnn_hidden_dim,
@@ -108,7 +84,6 @@ class PolymerGNNSystem(nn.Module):
             num_heads=gnn_num_heads,
         )
 
-        # Polymer Multi-Task Feedforward Network (FNN)
         self.polymer_fnn = PolymerMultiTaskFNN(
             input_dim=gnn_output_dim + 2,  # +2 for the N and T from polymer feats
             hidden_dim=multitask_fnn_hidden_dim,
@@ -116,13 +91,10 @@ class PolymerGNNSystem(nn.Module):
         )
 
     def forward(self, batch):
-        # Step 1: Compute Molecule Embeddings
         batch["node_features"] = self.molecule_embedding(batch)
 
-        # Step 2: Process Graph with Polymer GNN
         batch["polymer_embedding"] = self.polymer_gnn(batch)
 
-        # Step 3: Predict Properties with Multi-Task FNN
         predictions = self.polymer_fnn(batch)
 
         return predictions

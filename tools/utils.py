@@ -62,8 +62,6 @@ def create_column_transformer(
     for i, index in enumerate(target_indices):
         log_index = num_original_columns + target_indices.index(index)  # Offset index
 
-        print(log_index)
-
         name = f"log_{i}"
         log_pipeline = Pipeline(
             [

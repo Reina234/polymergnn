@@ -25,11 +25,10 @@ class PolymerMultiTaskFNN(nn.Module):
             nn.ReLU(),
             nn.Dropout(dropout_rate),
         )
-
         # Heads for individual property predictions
         self.sasa_head = nn.Linear(hidden_dim, 2)  # Mean & Std Dev
         self.log_rg_head = nn.Linear(hidden_dim, 2)  # Mean & Std Dev
-        self.log_ree_head = nn.Linear(hidden_dim, 2)  # Mean & Std Dev
+        self.log_ree_head = nn.Linear(hidden_dim + 1, 2)  # Mean & Std Dev
         self.log_diffusion_head = nn.Linear(
             hidden_dim + 1, 1
         )  # Only mean, conditioned on SASA
@@ -51,25 +50,42 @@ class PolymerMultiTaskFNN(nn.Module):
 
         # Concatenate polymer features with embeddings
         combined_input = torch.cat([polymer_embedding, polymer_feats], dim=-1)
-
         # Shared representation
         shared_repr = self.shared_layer(combined_input)
 
-        # Predict independent properties
         sasa = self.sasa_head(shared_repr)  # [B, 2] (mean, std)
+
         log_rg = self.log_rg_head(shared_repr)  # [B, 2] (mean, std)
 
-        # Dependent properties
-        log_diffusion = self.log_diffusion_head(
-            torch.cat([shared_repr, sasa[:, 0].unsqueeze(-1)], dim=-1)
-        )  # [B, 1]
-        log_ree = self.log_ree_head(
-            torch.cat([shared_repr, log_rg], dim=-1)
-        )  # [B, 2] (mean, std)
+        diff_input = torch.cat([shared_repr, sasa[:, 0].unsqueeze(-1)], dim=-1)
 
-        return {
-            "sasa": sasa,  # [B, 2]
-            "log_rg": log_rg,  # [B, 2]
-            "log_diffusion": log_diffusion.squeeze(-1),  # [B]
-            "log_ree": log_ree,  # [B, 2]
-        }
+        log_diffusion = self.log_diffusion_head(diff_input)  # [B, 1]
+
+        log_ree_input = torch.cat([shared_repr, log_rg[:, 0].unsqueeze(-1)], dim=-1)
+
+        log_ree = self.log_ree_head(log_ree_input)
+
+        output = self.process_outputs(sasa, log_rg, log_diffusion, log_ree)
+        return output
+
+    def process_outputs(self, sasa, log_rg, log_diffusion, log_ree):
+        """
+        Processes the model outputs into a single concatenated tensor
+        with the correct ordering for MSE loss.
+
+        Args:
+            sasa (torch.Tensor): Shape [B, 2]
+            log_rg (torch.Tensor): Shape [B, 2]
+            log_diffusion (torch.Tensor): Shape [B, 1]
+            log_ree (torch.Tensor): Shape [B, 2]
+
+        Returns:
+            torch.Tensor: A single tensor with the ordering [log_rg, log_diffusion, sasa, log_ree]
+        """
+
+        # Concatenate in the correct order
+        output_tensor = torch.cat(
+            [log_rg, log_diffusion, sasa, log_ree], dim=-1
+        )  # [B, 7]
+
+        return output_tensor  # Shape [B, 7]
