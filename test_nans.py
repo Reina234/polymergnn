@@ -1,5 +1,7 @@
-import numpy as np
 import pandas as pd
+
+# may need to remove NaNs from dataset or any rows with NaNs honestly
+
 
 # Load dataset
 df = pd.read_csv("tests/output_2_4.csv")

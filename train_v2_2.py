@@ -18,10 +18,10 @@ from torch.utils.data import DataLoader
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Load dataset
-df = pd.read_csv("tests/freesolv/FreeSolv_SAMPL.csv")
+df = pd.read_csv("tests/Lipophilicity.csv")
 print(df.head())
 print(df.dtypes)
-df = df.drop(df.columns[[0, 1]], axis=1)  # Drop unnecessary columns
+# df = df.drop(df.columns[[0, 1]], axis=1)  # Drop unnecessary columns
 
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
 
@@ -31,8 +31,8 @@ train_dataset = PolymerBertDataset(
     data=train_df,
     monomer_smiles_transformer=NoSmilesTransform(),
     mol_to_molgraph=SimpleMol2MolGraph(),
-    monomer_smiles_column=0,
-    target_columns=[1, 2],
+    monomer_smiles_column=2,
+    target_columns=[1],
     target_transformer=MinMaxScalerTransform(),
     is_train=True,
 )
@@ -42,16 +42,16 @@ val_dataset = PolymerBertDataset(
     data=val_df,
     monomer_smiles_transformer=NoSmilesTransform(),
     mol_to_molgraph=SimpleMol2MolGraph(),
-    monomer_smiles_column=0,
-    target_columns=[1, 2],
+    monomer_smiles_column=2,
+    target_columns=[1],
     target_transformer=target_transformer,
 )
 test_dataset = PolymerBertDataset(
     data=test_df,
     monomer_smiles_transformer=NoSmilesTransform(),
     mol_to_molgraph=SimpleMol2MolGraph(),
-    monomer_smiles_column=0,
-    target_columns=[1, 2],
+    monomer_smiles_column=2,
+    target_columns=[1],
     target_transformer=target_transformer,
 )
 

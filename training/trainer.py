@@ -129,6 +129,7 @@ class Trainer(ABC):
         # Attributes to store final test metrics.
         self.final_test_loss = None
         self.final_test_metrics = {}
+        self.eval_metrics = {}
 
     @abstractmethod
     def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -226,7 +227,7 @@ class Trainer(ABC):
                 #    labels, preds
                 # )
                 results["Metrics/MAPE"] = 100 * np.mean(
-                    np.abs(labels - preds) / np.abs(np.max(labels + 0.00001))
+                    np.abs(labels - preds) / np.abs(np.max(labels + 0.00000001))
                 )
             elif metric == "RMSE":
                 results["Metrics/RMSE"] = np.sqrt(mean_squared_error(labels, preds))
@@ -294,7 +295,10 @@ class Trainer(ABC):
             epoch_loss, _ = self._train_epoch(epoch)
             val_loss = None
             if self.val_loader:
-                val_loss, _ = self.evaluate(self.val_loader, epoch, mode="Validation")
+                val_loss, eval_metrics = self.evaluate(
+                    self.val_loader, epoch, mode="Validation"
+                )
+                self.eval_metrics[epoch] = eval_metrics
             if self.flush_tensorboard_each_epoch:
                 self._flush_tensorboard()
 
@@ -306,6 +310,7 @@ class Trainer(ABC):
         if self.track_learning_curve:
             self.plot_learning_curve()
             self.save_learning_curve_data()
+            self.save_eval_metrics()
 
         logger.info("Training Completed.")
 
@@ -395,6 +400,17 @@ class Trainer(ABC):
 
     def _create_convergence_data_name(self):
         return f"{self._create_run_key}_convergence.json"
+
+    def _create_metrics_data_name(self):
+        return f"{self._create_run_key}_metrics.json"
+
+    def save_eval_metrics(self):
+        filename = self._create_metrics_data_name()
+        file_path = os.path.join(self.save_results_dir, filename)
+        with open(file_path, "w") as f:
+            json.dump(self.eval_metrics, f, indent=4)
+
+        logger.info("Saved validation metrics to %s", file_path)
 
 
 class MoleculeTrainer(Trainer):

@@ -222,3 +222,6 @@ best_hyperparams["log_selection_tensor"] = decode_tensor(
 
 print("Decoded rdkit_selection_tensor:", best_hyperparams["rdkit_selection_tensor"])
 print("Decoded log_selection_tensor:", best_hyperparams["log_selection_tensor"])
+
+
+# Trial 0 finished with value: 0.41995464265346527 and parameters: {'batch_size': 32, 'lr': 0.0008200682951258308, 'weight_decay': 0.007006149865358475, 'mpnn_output_dim': 256, 'mpnn_hidden_dim': 96, 'mpnn_depth': 1, 'mpnn_dropout': 0.3273969103512452, 'molecule_embedding_hidden_dim': 192, 'embedding_dim': 64, 'use_rdkit': True, 'use_chembert': False, 'gnn_hidden_dim': 64, 'gnn_output_dim': 32, 'gnn_dropout': 0.2873908862729379, 'gnn_num_heads': 2, 'multitask_fnn_hidden_dim': 96, 'multitask_fnn_dropout': 0.373362595357648, 'rdkit_selection_encoded': 65, 'log_selection_encoded': 75, 'epochs': 23}. Best is trial 0 with value: 0.41995464265346527.
