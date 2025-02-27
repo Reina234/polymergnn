@@ -215,8 +215,8 @@ class Trainer(ABC):
             if metric == "MAE":
                 results["Metrics/MAE"] = mean_absolute_error(labels, preds)
             elif metric == "MAPE":
-                results["Metrics/MAPE"] = 100 * mean_absolute_percentage_error(
-                    labels, preds
+                results["Metrics/MAPE"] = 100 * np.mean(
+                    np.abs(labels - preds) / np.abs(np.max(labels + 0.00001))
                 )
             elif metric == "RMSE":
                 results["Metrics/RMSE"] = np.sqrt(mean_squared_error(labels, preds))
@@ -265,7 +265,8 @@ class Trainer(ABC):
             val_losses={"Final Val Loss": val_loss or 0},
         )
         if self.track_learning_curve:
-            self.plot_learning_curve()
+            self._plot_learning_curve()
+            self._save_learning_curve_data()
         logger.info("Training Completed.")
 
     def _flush_tensorboard(self):
@@ -309,7 +310,7 @@ class Trainer(ABC):
                 summary[name] = repr(value)
         return json.dumps(summary, indent=None, separators=(", ", ": "))
 
-    def plot_learning_curve(self):
+    def _plot_learning_curve(self):
         import matplotlib.pyplot as plt
 
         plt.figure(figsize=self.figure_size)
@@ -326,15 +327,33 @@ class Trainer(ABC):
         )
         plt.show()
 
-    def _create_learning_curve_figname(self):
-        figname = "_".join(
+    def _save_learning_curve_data(self):
+        losses = {
+            "train_losses": self.train_losses,
+            "val_losses": self.val_losses,
+        }
+        filename = self._create_convergence_data_name()
+        logger.info("Saving learning curve data to %s", filename)
+        with open(os.path.join(self.save_results_dir, filename), "w") as f:
+            json.dump(losses, f)
+        logger.info("Learning curve data saved.")
+
+    def _create_run_key(self):
+        name = "_".join(
             [
                 f"{key}={value}"
                 for key, value in self.hyperparams.items()
                 if key != "device"
             ]
         )
+        return name
+
+    def _create_learning_curve_figname(self):
+        figname = self._create_run_key
         return f"{figname}_learning_curve.png"
+
+    def _create_convergence_data_name(self):
+        return f"{self._create_run_key}_convergence.json"
 
     def _write_hparams_to_tensorboard(
         self, train_losses: Dict[str, float], val_losses: Dict[str, float]
@@ -451,7 +470,13 @@ class PolymerGNNTrainer(Trainer):
         predictions = self.model(batch)
 
         labels = batch["labels"].to(self.device)
+
+        if torch.isnan(labels).any():
+            logger.error(
+                f"NaN detected in labels! Labels: {labels} for smiles: {batch["smiles_list"]}"
+            )
         filtered_labels = self.log_transform_helper.filter_target_labels(labels)
+
         return predictions, filtered_labels
 
     def compute_loss(

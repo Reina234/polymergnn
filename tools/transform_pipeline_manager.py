@@ -7,11 +7,12 @@ import copy
 
 
 def log_transform(x):
-    return np.log1p(x)  # log(1 + x) to avoid log(0) issues
+    log = np.log(x)
+    return np.log(x)  # log(1 + x) to avoid log(0) issues
 
 
 def inverse_log_transform(x):
-    return np.expm1(x)  # exp(x) - 1 to reverse log1p
+    return np.exp(x)  # exp(x) - 1 to reverse log1p
 
 
 class TransformPipelineManager:

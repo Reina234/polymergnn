@@ -194,7 +194,14 @@ class PolymerBertDataset(PolymerDataset):
         ]
         rdkit_list = [self.rdkit_featuriser.featurise(mol) for mol in mols]
         molgraphs, features, targets = self._get_default_items(idx=idx)
-        return idx, molgraphs, chemberta_vals, rdkit_list, features, targets
+        return (
+            idx,
+            molgraphs,
+            chemberta_vals,
+            rdkit_list,
+            features,
+            targets,
+        )
 
     @staticmethod
     def collate_fn(batch):
@@ -302,6 +309,7 @@ class PolymerGNNDataset(PolymerDataset):
             targets,
             edge_indeces,
             edge_attr,
+            smiles_list,
         )
 
     @staticmethod
@@ -313,6 +321,7 @@ class PolymerGNNDataset(PolymerDataset):
         polymer_mapping = []
         polymer_feats_list = []
         labels_list = []
+        smiles_list = []
 
         edge_indices_list = []
         edge_attr_list = []
@@ -329,6 +338,7 @@ class PolymerGNNDataset(PolymerDataset):
             targets,
             edge_indices,
             edge_attr,
+            smiles,
         ) in enumerate(batch):
 
             num_monomers = len(molgraphs)
@@ -351,6 +361,7 @@ class PolymerGNNDataset(PolymerDataset):
 
             node_offset += num_monomers  # Increment offset for the next polymer
 
+            smiles_list.append(smiles)
             polymer_feats_list.append(poly_feats)
             labels_list.append(targets)
 
@@ -369,4 +380,5 @@ class PolymerGNNDataset(PolymerDataset):
             "solvent_labels": torch.tensor(solvent_labels_list).unsqueeze(
                 1
             ),  # Shape (N, 1)
+            "smiles_list": smiles_list,
         }

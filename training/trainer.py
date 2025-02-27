@@ -15,6 +15,8 @@ from sklearn.metrics import (
 from torch.utils.data import DataLoader
 import json
 from training.batched_dataset import PolymerDataset
+import matplotlib.pyplot as plt
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -219,8 +221,12 @@ class Trainer(ABC):
             if metric == "MAE":
                 results["Metrics/MAE"] = mean_absolute_error(labels, preds)
             elif metric == "MAPE":
-                results["Metrics/MAPE"] = 100 * mean_absolute_percentage_error(
-                    labels, preds
+                # print(labels, preds)
+                # results["Metrics/MAPE"] = 100 * mean_absolute_percentage_error(
+                #    labels, preds
+                # )
+                results["Metrics/MAPE"] = 100 * np.mean(
+                    np.abs(labels - preds) / np.abs(np.max(labels + 0.00001))
                 )
             elif metric == "RMSE":
                 results["Metrics/RMSE"] = np.sqrt(mean_squared_error(labels, preds))
@@ -299,6 +305,7 @@ class Trainer(ABC):
 
         if self.track_learning_curve:
             self.plot_learning_curve()
+            self.save_learning_curve_data()
 
         logger.info("Training Completed.")
 
@@ -348,7 +355,6 @@ class Trainer(ABC):
         return json.dumps(summary, indent=None, separators=(", ", ": "))
 
     def plot_learning_curve(self):
-        import matplotlib.pyplot as plt
 
         plt.figure(figsize=self.figure_size)
         plt.plot(self.train_losses, label="Train Loss", marker="o")
@@ -364,15 +370,31 @@ class Trainer(ABC):
         )
         plt.show()
 
-    def _create_learning_curve_figname(self):
-        figname = "_".join(
+    def save_learning_curve_data(self):
+        losses = {
+            "train_losses": self.train_losses,
+            "val_losses": self.val_losses,
+        }
+        filename = self._create_convergence_data_name()
+        with open(os.path.join(self.save_results_dir, filename), "w") as f:
+            json.dump(losses, f)
+
+    def _create_run_key(self):
+        name = "_".join(
             [
                 f"{key}={value}"
                 for key, value in self.hyperparams.items()
                 if key != "device"
             ]
         )
+        return name
+
+    def _create_learning_curve_figname(self):
+        figname = self._create_run_key
         return f"{figname}_learning_curve.png"
+
+    def _create_convergence_data_name(self):
+        return f"{self._create_run_key}_convergence.json"
 
 
 class MoleculeTrainer(Trainer):
