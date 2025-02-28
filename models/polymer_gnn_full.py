@@ -90,11 +90,21 @@ class PolymerGNNSystem(nn.Module):
             dropout_rate=multitask_fnn_dropout,
         )
 
-    def forward(self, batch):
-        batch["node_features"] = self.molecule_embedding(batch)
+    def forward(self, batch, return_intermediates=False):
+        batch["node_features"], mpnn_out, chemberta_emb, rdkit_emb = (
+            self.molecule_embedding(batch)
+        )
 
         batch["polymer_embedding"] = self.polymer_gnn(batch)
 
         predictions = self.polymer_fnn(batch)
 
+        if return_intermediates:
+            return (
+                predictions,
+                mpnn_out,
+                chemberta_emb,
+                rdkit_emb,
+                batch["polymer_embedding"],
+            )
         return predictions

@@ -1,0 +1,25 @@
+=== Test Run Summary ===
+class: FNNTrainer
+output_dim: int
+device: device
+hyperparams: dict
+model: SimpleFNN
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: NoneType
+
+--- Test Metrics ---
+Metrics/MAE: 1.429312
+Metrics/MAPE: 0.337980
+Metrics/RMSE: 5.038988
+==================================================
+

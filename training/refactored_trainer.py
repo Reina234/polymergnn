@@ -218,7 +218,7 @@ class Trainer(ABC):
                 results["Metrics/MAE"] = mean_absolute_error(labels, preds)
             elif metric == "MAPE":
                 results["Metrics/MAPE"] = 100 * np.mean(
-                    np.abs(labels - preds) / np.abs(np.max(labels + 0.00000001))
+                    np.abs(labels - preds) / np.abs(np.max(labels, 10**-10))
                 )
             elif metric == "RMSE":
                 results["Metrics/RMSE"] = np.sqrt(mean_squared_error(labels, preds))

@@ -63,11 +63,14 @@ class BenchmarkTrainer(Trainer, ABC):
         pass
 
     def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
-        #        batch = {
-        #            k: (v.to(self.device) if isinstance(v, torch.Tensor) else v)
-        #            for k, v in batch.items()
-        #        }
-
+        batch = {
+            k: (
+                torch.tensor(v, dtype=torch.float32).to(self.device)
+                if isinstance(v, list)
+                else v.to(self.device) if isinstance(v, torch.Tensor) else v
+            )
+            for k, v in batch.items()
+        }
         predictions = self.model(batch)
 
         labels = batch[-2].to(self.device)

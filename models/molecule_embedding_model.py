@@ -50,20 +50,16 @@ class MoleculeEmbeddingModel(nn.Module):
         self.hidden_dim = hidden_dim
 
     def forward(self, batch):
-        # 1) MPNN embeddings
         mpnn_out = self.mpnn(batch["batch_mol_graph"])
 
-        # 2) ChemBERTa embeddings (if used)
         if self.use_chembert:
             chemberta_emb = self.bert_norm(batch["chemberta_tensor"])
             chemberta_emb = chemberta_emb.squeeze(1)
         else:
             chemberta_emb = torch.empty(mpnn_out.size(0), 0, device=mpnn_out.device)
 
-        # 3) RDKit features (if used)
         if self.use_rdkit and "rdkit_tensor" in batch:
             full_rdkit_tensor = batch["rdkit_tensor"]
-            # Assume rdkit_featurizer.select_features returns tensor with proper dims
             selected_rdkit = self.rdkit_featurizer.select_features(
                 full_rdkit_tensor, self.selected_rdkit_features
             )
@@ -73,7 +69,6 @@ class MoleculeEmbeddingModel(nn.Module):
         else:
             rdkit_emb = torch.empty(mpnn_out.size(0), 0, device=mpnn_out.device)
 
-        # 4) Fuse features (concatenate along feature dimension)
         fused_input = torch.cat([mpnn_out, chemberta_emb, rdkit_emb], dim=-1)
         molecule_embs = self.fusion(fused_input)
-        return molecule_embs
+        return molecule_embs, mpnn_out, chemberta_emb, rdkit_emb
