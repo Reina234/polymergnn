@@ -42,6 +42,7 @@ class Trainer(ABC):
         flush_tensorboard_each_epoch: bool = False,
         close_writer_on_finish: bool = True,
         additional_info: Optional[Dict[str, str]] = None,
+        loss_fn=torch.nn.SmoothL1Loss(),
     ):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -126,6 +127,10 @@ class Trainer(ABC):
 
         self.final_test_loss = None
         self.final_test_metrics = {}
+        self.loss_fn = loss_fn  # torch.nn.functional.mse_loss()
+
+    def _create_loss_fn(self) -> torch.nn.Module:
+        return torch.nn.SmoothL1Loss()
 
     @abstractmethod
     def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -152,7 +157,7 @@ class Trainer(ABC):
     def compute_loss(
         self, predictions: torch.Tensor, labels: torch.Tensor
     ) -> torch.Tensor:
-        base_loss = torch.nn.functional.mse_loss(predictions, labels)
+        base_loss = self.loss_fn(predictions, labels)
         return base_loss
 
     def _train_batch(self, batch) -> Tuple[float, np.ndarray, np.ndarray]:
@@ -202,7 +207,13 @@ class Trainer(ABC):
         avg_loss = total_loss / len(loader)
         all_preds = np.concatenate(all_preds)
         all_labels = np.concatenate(all_labels)
+        print("before transform")
+        print(all_labels[:, -1])
+        print(all_preds[:, -1])
         all_labels, all_preds = self.inverse_transform(all_labels, all_preds)
+        print("after transform")
+        print(all_labels[:, -1])
+        print(all_preds[:, -1])
         metrics = self.compute_metrics(all_labels, all_preds)
         metrics_dict = {f"{mode} Loss": avg_loss, **metrics}
         self._write_scalar_to_tensorboard(metrics_dict, epoch)
@@ -213,17 +224,34 @@ class Trainer(ABC):
         self, labels: np.ndarray, preds: np.ndarray
     ) -> Dict[str, float]:
         results = {}
+        num_labels = labels.shape[1]  # Number of output labels
+
         for metric in self.evaluation_metrics:
-            if metric == "MAE":
-                results["Metrics/MAE"] = mean_absolute_error(labels, preds)
-            elif metric == "MAPE":
-                results["Metrics/MAPE"] = 100 * np.mean(
-                    np.abs(labels - preds) / np.abs(np.max(labels, 10**-10))
-                )
-            elif metric == "RMSE":
-                results["Metrics/RMSE"] = np.sqrt(mean_squared_error(labels, preds))
-            elif metric == "R2":
-                results["Metrics/R2"] = r2_score(labels, preds)
+            metric_values = []
+
+            for i in range(num_labels):
+                label_i = labels[:, i]  # Extracting label i
+                pred_i = preds[:, i]
+
+                if metric == "MAE":
+                    value = mean_absolute_error(label_i, pred_i)
+                    results[f"Metrics/{metric}/Label_{i+1}"] = value
+                elif metric == "MAPE":
+                    value = 100 * np.mean(
+                        np.abs(label_i - pred_i) / np.maximum(np.abs(label_i), 10**-10)
+                    )
+                    results[f"Metrics/{metric}/Label_{i+1}"] = value
+                elif metric == "RMSE":
+                    value = np.sqrt(mean_squared_error(label_i, pred_i))
+                    results[f"Metrics/{metric}/Label_{i+1}"] = value
+                elif metric == "R2":
+                    value = r2_score(label_i, pred_i)
+                    results[f"Metrics/{metric}/Label_{i+1}"] = value
+
+                metric_values.append(value)
+
+            results[f"Metrics/{metric}/Average"] = np.mean(metric_values)
+
         return results
 
     def _add_to_learning_curve(self, loss: float, is_train: bool):
@@ -235,10 +263,31 @@ class Trainer(ABC):
             self.val_losses.append(loss)
 
     def _write_scalar_to_tensorboard(self, metrics: Dict[str, float], epoch: int):
+        # I've refactored this from before cause it kept logging on separate graphs :(
         if self.use_tensorboard and self.writer is not None:
             self.writer.add_scalar("Epoch", epoch, epoch)
+
+            grouped_metrics = {}  # bytype, e.g., MAPE, RMSE, etc.
+
             for key, value in metrics.items():
-                self.writer.add_scalar(key, value, epoch)
+                parts = key.split("/")  # Splitting the key path
+                if len(parts) > 2:  #  Metrics/MAPE/Label_1
+                    metric_type = parts[1]
+                    label_name = parts[2]
+                    if metric_type not in grouped_metrics:
+                        grouped_metrics[metric_type] = {}
+
+                    grouped_metrics[metric_type][
+                        label_name
+                    ] = value  # Group values under metric type
+                else:
+                    self.writer.add_scalar(
+                        key, value, epoch
+                    )  # Log non-grouped metrics normally
+
+            # Now log grouped metrics under a single graph per metric type
+            for metric_type, values in grouped_metrics.items():
+                self.writer.add_scalars(f"Metrics/{metric_type}", values, epoch)
 
     def _make_final_losses(
         self,
@@ -420,6 +469,7 @@ class PolymerGNNTrainer(Trainer):
         flush_tensorboard_each_epoch: bool = False,
         close_writer_on_finish: bool = True,
         additional_info: Optional[Dict[str, str]] = None,
+        loss_weights=torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0, 10.0]),
     ):
         """
         Additional arguments:
@@ -442,8 +492,9 @@ class PolymerGNNTrainer(Trainer):
             flush_tensorboard_each_epoch=flush_tensorboard_each_epoch,
             close_writer_on_finish=close_writer_on_finish,
             additional_info=additional_info,
+            loss_fn=torch.nn.HuberLoss(reduction="none", delta=1.0),
         )
-
+        self.loss_weights = loss_weights
         log_selection_tensor = self.hyperparams.get(
             "log_selection_tensor", torch.tensor([0, 0, 0, 0, 0, 0, 0, 0])
         )
@@ -469,6 +520,9 @@ class PolymerGNNTrainer(Trainer):
         gnn_dropout = self.hyperparams.get("gnn_dropout", 0.1)
         gnn_num_heads = self.hyperparams.get("gnn_num_heads", 4)
         multitask_fnn_hidden_dim = self.hyperparams.get("multitask_fnn_hidden_dim", 128)
+        multitask_fnn_shared_layer_dim = self.hyperparams.get(
+            "multitask_fnn_shared_layer_dim", 128
+        )
         multitask_fnn_dropout = self.hyperparams.get("multitask_fnn_dropout", 0.1)
         model = PolymerGNNSystem(
             mpnn_output_dim=mpnn_output_dim,
@@ -485,9 +539,18 @@ class PolymerGNNTrainer(Trainer):
             gnn_dropout=gnn_dropout,
             gnn_num_heads=gnn_num_heads,
             multitask_fnn_hidden_dim=multitask_fnn_hidden_dim,
+            multitask_fnn_shared_layer_dim=multitask_fnn_shared_layer_dim,
             multitask_fnn_dropout=multitask_fnn_dropout,
         )
         return model
+
+    def compute_loss(
+        self, predictions: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+        loss_vect = self.loss_fn(predictions, labels)
+        weighted_loss = loss_vect * self.loss_weights
+        final_loss = torch.mean(weighted_loss)
+        return final_loss
 
     def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
         # Move tensors to device

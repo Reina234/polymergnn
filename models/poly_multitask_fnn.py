@@ -6,6 +6,7 @@ class PolymerMultiTaskFNN(nn.Module):
     def __init__(
         self,
         input_dim: int,  # Polymer embedding + N, T
+        shared_layer_dim: int,
         hidden_dim: int,
         dropout_rate: float = 0.2,
     ):
@@ -21,17 +22,35 @@ class PolymerMultiTaskFNN(nn.Module):
 
         # Shared representation
         self.shared_layer = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
+            nn.Linear(input_dim, shared_layer_dim),
+            nn.SiLU(),
             nn.Dropout(dropout_rate),
         )
         # Heads for individual property predictions
-        self.sasa_head = nn.Linear(hidden_dim, 2)  # Mean & Std Dev
-        self.log_rg_head = nn.Linear(hidden_dim, 2)  # Mean & Std Dev
-        self.log_ree_head = nn.Linear(hidden_dim + 1, 2)  # Mean & Std Dev
-        self.log_diffusion_head = nn.Linear(
-            hidden_dim + 1, 1
-        )  # Only mean, conditioned on SASA
+        self.sasa_head = nn.Sequential(
+            nn.Linear(shared_layer_dim, hidden_dim), nn.SiLU(), nn.Linear(hidden_dim, 2)
+        )
+        self.log_rg_head = nn.Sequential(
+            nn.Linear(shared_layer_dim, hidden_dim), nn.SiLU(), nn.Linear(hidden_dim, 2)
+        )
+        self.log_ree_head = nn.Sequential(
+            nn.Linear(shared_layer_dim + 1, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, 2),
+        )
+        self.log_diffusion_head = nn.Sequential(
+            nn.Linear(input_dim + 1, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, 1),
+        )
+        # self.log_diffusion_head = nn.Sequential(
+        #    nn.Linear(shared_layer_dim, hidden_dim),
+        #    nn.SiLU(),
+        #    nn.Dropout(dropout_rate),
+        #    nn.Linear(hidden_dim, hidden_dim),
+        #    nn.SiLU(),
+        #    nn.Linear(hidden_dim, 1),
+        # )
 
     def forward(self, batch):
         """
@@ -57,15 +76,18 @@ class PolymerMultiTaskFNN(nn.Module):
 
         log_rg = self.log_rg_head(shared_repr)  # [B, 2] (mean, std)
 
-        diff_input = torch.cat([shared_repr, sasa[:, 0].unsqueeze(-1)], dim=-1)
+        diff_input = torch.cat([combined_input, sasa[:, 0].unsqueeze(-1)], dim=-1)
 
         log_diffusion = self.log_diffusion_head(diff_input)  # [B, 1]
-
+        # log_diffusion = self.log_diffusion_head(shared_repr)
         log_ree_input = torch.cat([shared_repr, log_rg[:, 0].unsqueeze(-1)], dim=-1)
 
         log_ree = self.log_ree_head(log_ree_input)
 
-        output = self.process_outputs(sasa, log_rg, log_diffusion, log_ree)
+        output = self.process_outputs(
+            sasa=sasa, log_rg=log_rg, log_diffusion=log_diffusion, log_ree=log_ree
+        )
+
         return output
 
     def process_outputs(self, sasa, log_rg, log_diffusion, log_ree):

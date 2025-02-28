@@ -24,6 +24,7 @@ class PolymerGNNSystem(nn.Module):
         gnn_output_dim: int = 128,
         gnn_dropout: float = 0.1,
         gnn_num_heads: int = 4,
+        multitask_fnn_shared_layer_dim: int = 128,
         multitask_fnn_hidden_dim: int = 128,
         multitask_fnn_dropout: float = 0.1,
     ):
@@ -86,6 +87,7 @@ class PolymerGNNSystem(nn.Module):
 
         self.polymer_fnn = PolymerMultiTaskFNN(
             input_dim=gnn_output_dim + 2,  # +2 for the N and T from polymer feats
+            shared_layer_dim=multitask_fnn_shared_layer_dim,
             hidden_dim=multitask_fnn_hidden_dim,
             dropout_rate=multitask_fnn_dropout,
         )

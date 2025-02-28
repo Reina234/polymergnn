@@ -69,26 +69,27 @@ test_dataset = PolymerGNNDataset(
 
 hyperparams = {
     "batch_size": 32,
-    "lr": 0.000820068,
-    "weight_decay": 0.007006149865,
-    "mpnn_output_dim": 256,
+    "lr": 0.002,
+    "weight_decay": 1e-6,
+    "mpnn_output_dim": 128,
     "mpnn_hidden_dim": 96,
     "mpnn_depth": 1,
     "mpnn_dropout": 0.327396910351,
-    "rdkit_selection_tensor": torch.tensor([1, 0, 1, 0, 1, 0, 1]),
+    "rdkit_selection_tensor": torch.tensor([0, 0, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
-        [0, 1, 0, 0, 0, 1, 1]
+        [1, 1, 1, 0, 0, 1, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 192,
-    "embedding_dim": 64,
+    "embedding_dim": 100,
     "use_rdkit": True,
     "use_chembert": True,
     "gnn_hidden_dim": 128,
     "gnn_output_dim": 64,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 2,
+    "gnn_num_heads": 4,
     "multitask_fnn_hidden_dim": 96,
-    "multitask_fnn_dropout": 0.373362595357648,
+    "multitask_fnn_shared_layer_dim": 128,
+    "multitask_fnn_dropout": 0.1,
     "epochs": 50,
 }
 
