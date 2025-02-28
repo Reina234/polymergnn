@@ -1,4 +1,6 @@
 from rdkit import Chem
+from rdkit.Chem.rdchem import Mol
+
 from tools.smiles_transformers import SmilesTransformer, NoSmilesTransform
 
 
@@ -10,7 +12,7 @@ class Smiles2Mol:
     def __init__(self, smiles_transformer: SmilesTransformer = NoSmilesTransform()):
         self.transformer = smiles_transformer
 
-    def convert(self, smiles: str) -> str:
+    def convert(self, smiles: str) -> Mol:
         """Converts processed smiles to  Chem.mol"""
         processed_smiles = self.transformer.transform(smiles)
         mol = Chem.MolFromSmiles(processed_smiles.strip())

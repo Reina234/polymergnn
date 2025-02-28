@@ -395,14 +395,14 @@ class Trainer(ABC):
         return name
 
     def _create_learning_curve_figname(self):
-        figname = self._create_run_key
+        figname = self._create_run_key()
         return f"{figname}_learning_curve.png"
 
     def _create_convergence_data_name(self):
-        return f"{self._create_run_key}_convergence.json"
+        return f"{self._create_run_key()}_convergence.json"
 
     def _create_metrics_data_name(self):
-        return f"{self._create_run_key}_metrics.json"
+        return f"{self._create_run_key()}_metrics.json"
 
     def save_eval_metrics(self):
         filename = self._create_metrics_data_name()

@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 from config.data_models import IFG
 import torch
 from rdkit.Chem.rdchem import Mol
+from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
 from torch.utils.data import Dataset
 from featurisers.ertl_algorithm import ErtlAlgorithm
 from tools.edge_creation import BondHBondEdgeCreator
@@ -15,6 +16,8 @@ from featurisers.molecule_featuriser import RDKitFeaturizer
 from featurisers.chemberta_tokeniser import ChemBERTaEmbedder
 from tools.utils import stack_tensors
 from tools.transform_pipeline_manager import TransformPipelineManager
+import numpy as np
+from torch.utils.data.dataloader import default_collate
 
 
 class PolymerDataset(ABC, Dataset):
@@ -100,6 +103,11 @@ class PolymerDataset(ABC, Dataset):
         new_indices = list(range(len(df.columns), len(df_new.columns)))
         return df_new, new_indices
 
+    @staticmethod
+    @abstractmethod
+    def collate_fn(batch):
+        pass
+
     @abstractmethod
     def _convert_mols_to_molgraph(self) -> List[List[MolGraph]]:
         pass
@@ -111,11 +119,7 @@ class PolymerDataset(ABC, Dataset):
     def __getitem__(self, idx):
         pass
 
-    def _get_default_items(
-        self, idx
-    ) -> Tuple[List[Mol], List[MolGraph], torch.tensor, torch.tensor]:
-        molgraphs = self.molgraphs[idx]
-
+    def _get_default_items(self, idx) -> Tuple[torch.tensor, torch.tensor]:
         features = self._retrieve_tensor_from_column(
             idx=idx, df=self.data, column_idx=self.feature_columns
         )
@@ -123,7 +127,7 @@ class PolymerDataset(ABC, Dataset):
             idx=idx, df=self.data, column_idx=self.target_columns
         )
 
-        return molgraphs, features, targets
+        return features, targets
 
     def _molgraphs_to_batchmolgraph(self, molgraph_list: List[MolGraph]):
         return [BatchMolGraph(molgraph) for molgraph in molgraph_list]
@@ -142,11 +146,6 @@ class PolymerDataset(ABC, Dataset):
         for mol in mols:
             fg_list.append(self.fg_detector.detect(mol))
         return fg_list
-
-    @staticmethod
-    @abstractmethod
-    def collate_fn(batch):
-        pass
 
 
 class PolymerBertDataset(PolymerDataset):
@@ -188,12 +187,13 @@ class PolymerBertDataset(PolymerDataset):
 
     def __getitem__(self, idx):
         mols = self.mols[idx]
+        molgraphs = self.molgraphs[idx]
         smiles_list = self.smiles_lists[idx]
         chemberta_vals = [
             self.chemberta_embedder.embed(smiles) for smiles in smiles_list
         ]
         rdkit_list = [self.rdkit_featuriser.featurise(mol) for mol in mols]
-        molgraphs, features, targets = self._get_default_items(idx=idx)
+        features, targets = self._get_default_items(idx=idx)
         return (
             idx,
             molgraphs,
@@ -299,7 +299,8 @@ class PolymerGNNDataset(PolymerDataset):
                 rdkit_list=rdkit_list, featuriser=self.rdkit_featuriser
             )
         )
-        molgraphs, features, targets = self._get_default_items(idx=idx)
+        molgraphs = self.molgraphs[idx]
+        features, targets = self._get_default_items(idx=idx)
         return (
             idx,
             molgraphs,
@@ -382,3 +383,97 @@ class PolymerGNNDataset(PolymerDataset):
             ),  # Shape (N, 1)
             "smiles_list": smiles_list,
         }
+
+
+class SimpleDataset(PolymerDataset):
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        n_bits: int,
+        pipeline_manager: TransformPipelineManager,
+        monomer_smiles_transformer: SmilesTransformer,
+        solvent_smiles_transformer: SmilesTransformer = NoSmilesTransform(),
+        radius: int = 2,
+        monomer_smiles_column: int = 0,
+        solvent_smiles_column: Optional[int] = None,
+        feature_columns: Optional[List[int]] = None,
+        target_columns: Optional[List[int]] = None,
+        is_train: bool = False,
+    ):
+        self.n_bits = n_bits
+        self.edge_index_creator = BondHBondEdgeCreator()
+        self.chemberta_embedder = ChemBERTaEmbedder()
+        self.rdkit_featuriser = RDKitFeaturizer()
+        self.rdkit_featuriser = RDKitFeaturizer()
+        self.morgan_generator = GetMorganGenerator(radius=radius, fpSize=n_bits)
+        super().__init__(
+            data=data,
+            pipeline_manager=pipeline_manager,
+            monomer_smiles_transformer=monomer_smiles_transformer,
+            solvent_smiles_transformer=solvent_smiles_transformer,
+            mol_to_molgraph=None,
+            target_columns=target_columns,
+            feature_columns=feature_columns,
+            monomer_smiles_column=monomer_smiles_column,
+            solvent_smiles_column=solvent_smiles_column,
+            is_train=is_train,
+        )
+
+    def _convert_mols_to_molgraph(self):
+        pass
+
+    def smiles_to_fingerprint(self, mol: Mol, radius=2):
+
+        if mol is None:
+            fingerprint = np.zeros(self.n_bits)  # Zero-vector for invalid SMILES
+        else:
+            fingerprint = self.morgan_generator.GetCountFingerprintAsNumPy(mol)
+
+        return fingerprint
+
+    def pool_features(self, features_tensor: torch.Tensor) -> torch.Tensor:
+        non_solvent_features = features_tensor[:-1]  # Exclude solvent
+        solvent_feature = features_tensor[-1]  # Last molecule is always the solvent
+
+        if len(non_solvent_features) > 0:
+            pooled_feature = torch.mean(non_solvent_features, dim=0)
+        else:
+            pooled_feature = (
+                solvent_feature.clone()
+            )  # Edge case: If only solvent exists
+
+        final_feature = torch.cat([pooled_feature, solvent_feature], dim=0)
+        return final_feature  # Shape: (2 * feature_dim,)
+
+    def __getitem__(self, idx):
+        mols = self.mols[idx]
+        smiles_list = self.smiles_lists[idx]
+        fingerprints = [self.smiles_to_fingerprint(mol) for mol in mols]
+        fingerprints_tensor = torch.tensor(np.array(fingerprints), dtype=torch.float32)
+        pooled_fingerprint = self.pool_features(fingerprints_tensor)
+
+        chemberta_vals = [
+            self.chemberta_embedder.embed(smiles).detach().numpy()
+            for smiles in smiles_list
+        ]
+        chemberta_tensor = torch.tensor(chemberta_vals, dtype=torch.float32)
+        pooled_chemberta = self.pool_features(chemberta_tensor)
+
+        rdkit_list = [self.rdkit_featuriser.featurise(mol) for mol in mols]
+        rdkit_tensor = torch.tensor(np.array(rdkit_list), dtype=torch.float32)
+        pooled_rdkit = self.pool_features(rdkit_tensor)
+
+        features, targets = self._get_default_items(idx=idx)
+
+        return (
+            idx,
+            pooled_chemberta,
+            pooled_rdkit,
+            features,
+            targets,
+            pooled_fingerprint,
+        )
+
+    @staticmethod
+    def collate_fn(batch):
+        return default_collate(batch)

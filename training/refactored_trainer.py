@@ -10,9 +10,10 @@ import json
 from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
-    mean_absolute_percentage_error,
     r2_score,
 )
+
+# mean_percentage_error() removed due to exploding values
 from tools.log_transform_helper import LogTransformHelper
 from torch.utils.data import DataLoader
 import torch.optim as optim
@@ -79,6 +80,7 @@ class Trainer(ABC):
         self.num_batches = len(self.train_loader) if self.train_loader else 0
         self.track_learning_curve = track_learning_curve
         self.figure_size = figure_size
+        self.eval_metrics = {}
         self.optimiser = self.configure_optimiser()
         self.summary_line = self.generate_run_summary(
             self,
@@ -125,14 +127,6 @@ class Trainer(ABC):
         self.final_test_loss = None
         self.final_test_metrics = {}
 
-    def configure_optimiser(self) -> torch.optim.Optimizer:
-        optim_lr = self.hyperparams.get("lr", 1e-3)
-        optim_weight_decay = self.hyperparams.get("weight_decay", 0.0)
-        optimiser = optim.Adam(
-            self.model.parameters(), lr=optim_lr, weight_decay=optim_weight_decay
-        )
-        return optimiser
-
     @abstractmethod
     def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
         pass
@@ -142,10 +136,24 @@ class Trainer(ABC):
         pass
 
     @abstractmethod
+    def inverse_transform(
+        self, labels: np.ndarray, preds: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        pass
+
+    def configure_optimiser(self) -> torch.optim.Optimizer:
+        optim_lr = self.hyperparams.get("lr", 1e-3)
+        optim_weight_decay = self.hyperparams.get("weight_decay", 0.0)
+        optimiser = optim.Adam(
+            self.model.parameters(), lr=optim_lr, weight_decay=optim_weight_decay
+        )
+        return optimiser
+
     def compute_loss(
         self, predictions: torch.Tensor, labels: torch.Tensor
     ) -> torch.Tensor:
-        pass
+        base_loss = torch.nn.functional.mse_loss(predictions, labels)
+        return base_loss
 
     def _train_batch(self, batch) -> Tuple[float, np.ndarray, np.ndarray]:
         self.optimiser.zero_grad()
@@ -201,12 +209,6 @@ class Trainer(ABC):
         self._add_to_learning_curve(avg_loss, is_train=False)
         return avg_loss, metrics
 
-    @abstractmethod
-    def inverse_transform(
-        self, labels: np.ndarray, preds: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        pass
-
     def compute_metrics(
         self, labels: np.ndarray, preds: np.ndarray
     ) -> Dict[str, float]:
@@ -238,13 +240,23 @@ class Trainer(ABC):
             for key, value in metrics.items():
                 self.writer.add_scalar(key, value, epoch)
 
-    @abstractmethod
     def _make_final_losses(
         self,
         additional_train_losses: Dict[str, float],
         additional_val_losses: Dict[str, float],
     ) -> Dict[str, float]:
-        pass
+        final_losses = {}
+        if additional_train_losses:
+            final_losses["Final Train Loss"] = additional_train_losses.get(
+                "Final Train Loss", 0
+            )
+        if additional_val_losses:
+            final_losses["Final Val Loss"] = additional_val_losses.get(
+                "Final Val Loss", 0
+            )
+        logger.info("Final Training Loss: %s", final_losses.get("Final Train Loss", 0))
+        logger.info("Final Validation Loss: %s", final_losses.get("Final Val Loss", 0))
+        return final_losses
 
     def run(self):
         epochs = self.hyperparams.get("epochs", 50)
@@ -257,7 +269,10 @@ class Trainer(ABC):
             epoch_loss, _ = self._train_epoch(epoch)
             val_loss = None
             if self.val_loader:
-                val_loss, _ = self.evaluate(self.val_loader, epoch, mode="Validation")
+                val_loss, eval_metrics = self.evaluate(
+                    self.val_loader, epoch, mode="Validation"
+                )
+                self.eval_metrics[epoch] = eval_metrics
             if self.flush_tensorboard_each_epoch:
                 self._flush_tensorboard()
         self._write_hparams_to_tensorboard(
@@ -267,6 +282,7 @@ class Trainer(ABC):
         if self.track_learning_curve:
             self._plot_learning_curve()
             self._save_learning_curve_data()
+            self._save_eval_metrics()
         logger.info("Training Completed.")
 
     def _flush_tensorboard(self):
@@ -334,7 +350,9 @@ class Trainer(ABC):
         }
         filename = self._create_convergence_data_name()
         logger.info("Saving learning curve data to %s", filename)
-        with open(os.path.join(self.save_results_dir, filename), "w") as f:
+        with open(
+            os.path.join(self.save_results_dir, filename), "w", encoding="utf-8"
+        ) as f:
             json.dump(losses, f)
         logger.info("Learning curve data saved.")
 
@@ -349,11 +367,11 @@ class Trainer(ABC):
         return name
 
     def _create_learning_curve_figname(self):
-        figname = self._create_run_key
+        figname = self._create_run_key()
         return f"{figname}_learning_curve.png"
 
     def _create_convergence_data_name(self):
-        return f"{self._create_run_key}_convergence.json"
+        return f"{self._create_run_key()}_convergence.json"
 
     def _write_hparams_to_tensorboard(
         self, train_losses: Dict[str, float], val_losses: Dict[str, float]
@@ -371,6 +389,17 @@ class Trainer(ABC):
             self.writer.flush()
             if self.close_writer_on_finish:
                 self.writer.close()
+
+    def _create_metrics_data_name(self):
+        return f"{self._create_run_key()}_metrics.json"
+
+    def _save_eval_metrics(self):
+        filename = self._create_metrics_data_name()
+        file_path = os.path.join(self.save_results_dir, filename)
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(self.eval_metrics, f, indent=4)
+
+        logger.info("Saved validation metrics to %s", file_path)
 
 
 class PolymerGNNTrainer(Trainer):
@@ -473,17 +502,13 @@ class PolymerGNNTrainer(Trainer):
 
         if torch.isnan(labels).any():
             logger.error(
-                f"NaN detected in labels! Labels: {labels} for smiles: {batch["smiles_list"]}"
+                "NaN detected in labels! Labels: %s for smiles: %s",
+                labels,
+                batch["smiles_list"],
             )
         filtered_labels = self.log_transform_helper.filter_target_labels(labels)
 
         return predictions, filtered_labels
-
-    def compute_loss(
-        self, predictions: torch.Tensor, labels: torch.Tensor
-    ) -> torch.Tensor:
-        base_loss = torch.nn.functional.mse_loss(predictions, labels)
-        return base_loss
 
     def inverse_transform(
         self, labels: np.ndarray, preds: np.ndarray
@@ -495,21 +520,3 @@ class PolymerGNNTrainer(Trainer):
             values_to_transform=preds
         )
         return inv_labels.numpy(), inv_preds.numpy()
-
-    def _make_final_losses(
-        self,
-        additional_train_losses: Dict[str, float],
-        additional_val_losses: Dict[str, float],
-    ) -> Dict[str, float]:
-        final_losses = {}
-        if additional_train_losses:
-            final_losses["Final Train Loss"] = additional_train_losses.get(
-                "Final Train Loss", 0
-            )
-        if additional_val_losses:
-            final_losses["Final Val Loss"] = additional_val_losses.get(
-                "Final Val Loss", 0
-            )
-        logger.info("Final Training Loss: %s", final_losses.get("Final Train Loss", 0))
-        logger.info("Final Validation Loss: %s", final_losses.get("Final Val Loss", 0))
-        return final_losses
