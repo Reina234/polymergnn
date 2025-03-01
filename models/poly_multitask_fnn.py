@@ -36,7 +36,7 @@ class PolymerMultiTaskFNN(nn.Module):
         self.log_ree_head = nn.Sequential(
             nn.Linear(shared_layer_dim + 1, hidden_dim),
             nn.SiLU(),
-            nn.Linear(hidden_dim, 2),
+            nn.Linear(hidden_dim, 1),
         )
         self.log_diffusion_head = nn.Sequential(
             nn.Linear(input_dim + 1, hidden_dim),

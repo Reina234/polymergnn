@@ -330,7 +330,8 @@ class PolymerGNNDataset(PolymerDataset):
         mols = self.mols[idx]
         smiles_list = self.smiles_lists[idx]
         chemberta_vals = [
-            self.chemberta_embedder.embed(smiles) for smiles in smiles_list
+            self.chemberta_embedder.embed(smiles).detach().cpu().numpy()
+            for smiles in smiles_list
         ]
         rdkit_list = [self.rdkit_featuriser.featurise(mol) for mol in mols]
         edge_indeces, edge_attr = (

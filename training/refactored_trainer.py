@@ -207,13 +207,7 @@ class Trainer(ABC):
         avg_loss = total_loss / len(loader)
         all_preds = np.concatenate(all_preds)
         all_labels = np.concatenate(all_labels)
-        print("before transform")
-        print(all_labels[:, -1])
-        print(all_preds[:, -1])
         all_labels, all_preds = self.inverse_transform(all_labels, all_preds)
-        print("after transform")
-        print(all_labels[:, -1])
-        print(all_preds[:, -1])
         metrics = self.compute_metrics(all_labels, all_preds)
         metrics_dict = {f"{mode} Loss": avg_loss, **metrics}
         self._write_scalar_to_tensorboard(metrics_dict, epoch)
@@ -469,7 +463,7 @@ class PolymerGNNTrainer(Trainer):
         flush_tensorboard_each_epoch: bool = False,
         close_writer_on_finish: bool = True,
         additional_info: Optional[Dict[str, str]] = None,
-        loss_weights=torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0, 10.0]),
+        loss_weights=torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0]),
     ):
         """
         Additional arguments:
@@ -494,7 +488,9 @@ class PolymerGNNTrainer(Trainer):
             additional_info=additional_info,
             loss_fn=torch.nn.HuberLoss(reduction="none", delta=1.0),
         )
-        self.loss_weights = loss_weights
+        self.loss_weights = self.hyperparams.get(
+            "weights", torch.tensor([1, 1, 1, 1, 1, 1, 1])
+        )
         log_selection_tensor = self.hyperparams.get(
             "log_selection_tensor", torch.tensor([0, 0, 0, 0, 0, 0, 0, 0])
         )
@@ -547,6 +543,7 @@ class PolymerGNNTrainer(Trainer):
     def compute_loss(
         self, predictions: torch.Tensor, labels: torch.Tensor
     ) -> torch.Tensor:
+
         loss_vect = self.loss_fn(predictions, labels)
         weighted_loss = loss_vect * self.loss_weights
         final_loss = torch.mean(weighted_loss)

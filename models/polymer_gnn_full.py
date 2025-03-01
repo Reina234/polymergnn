@@ -92,6 +92,42 @@ class PolymerGNNSystem(nn.Module):
             dropout_rate=multitask_fnn_dropout,
         )
 
+    def configure_optimiser(self) -> torch.optim.Optimizer:
+        # Base learning rate and weight decay
+        optim_lr = self.hyperparams.get("lr", 1e-3)
+        optim_weight_decay = self.hyperparams.get("weight_decay", 0.0)
+
+        # Optuna-tuned scaling factors for specific heads
+        log_diffusion_factor = self.hyperparams.get(
+            "log_diffusion_factor", 2.0
+        )  # >1 increases LR
+        log_rg_factor = self.hyperparams.get(
+            "log_rg_factor", 1.5
+        )  # Can be >1, <1, or 1
+
+        # Define parameter groups with different LRs
+        optimiser = torch.optim.Adam(
+            [
+                {
+                    "params": self.model.parameters(),
+                    "lr": optim_lr,
+                    "weight_decay": optim_weight_decay,
+                },  # Default
+                {
+                    "params": self.model.polymer_fnn.log_diffusion_head.parameters(),
+                    "lr": optim_lr * log_diffusion_factor,
+                    "weight_decay": optim_weight_decay,
+                },  # Increased LR for log_diffusion_head
+                {
+                    "params": self.model.polymer_fnn.log_rg_head.parameters(),
+                    "lr": optim_lr * log_rg_factor,
+                    "weight_decay": optim_weight_decay,
+                },  # Tuned LR for log_rg_head
+            ]
+        )
+
+        return optimiser
+
     def forward(self, batch, return_intermediates=False):
         batch["node_features"], mpnn_out, chemberta_emb, rdkit_emb = (
             self.molecule_embedding(batch)

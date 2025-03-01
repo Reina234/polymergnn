@@ -41,6 +41,7 @@ class PolymerDataset(ABC, Dataset):
             df=self.untransformed_data, col_indices=target_columns
         )
         self.target_columns = target_columns + log_indexes
+
         self.feature_columns = feature_columns
 
         self.mol_to_molgraph = mol_to_molgraph
@@ -67,13 +68,9 @@ class PolymerDataset(ABC, Dataset):
         self.pipeline_manager = pipeline_manager
         self._combine_smiles()
         if is_train:
-            self.pipeline_manager.fit(
-                df=self.untransformed_data, log_indexes=log_indexes
-            )
+            self.pipeline_manager.fit(df=self.untransformed_data)
 
-        self.data = self.pipeline_manager.transform(
-            df=self.untransformed_data, log_indexes=log_indexes
-        )
+        self.data = self.pipeline_manager.transform(df=self.untransformed_data)
 
         self.molgraphs = self._convert_mols_to_molgraph()
 

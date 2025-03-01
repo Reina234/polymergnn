@@ -15,9 +15,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load dataset
 df = pd.read_csv("tests/output_2_4_2.csv")
 
-
+target_columns = [6, 7, 8, 9, 10, 11]
+feature_columns = [4, 5]
+num_outputs = len(target_columns)
 # Create Transform Manager
-pipeline_manager = TransformPipelineManager([4, 5], [6, 7, 8, 9, 10, 11, 12])
+pipeline_manager = TransformPipelineManager(feature_columns, target_columns)
 
 # Apply same transformation to all features & targets
 pipeline_manager.set_feature_pipeline(StandardScaler())
@@ -36,8 +38,8 @@ train_dataset = PolymerGNNDataset(
     solvent_smiles_column=1,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
     mol_to_molgraph=FGMembershipMol2MolGraph(),
-    target_columns=[6, 7, 8, 9, 10, 11, 12],
-    feature_columns=[4, 5],
+    target_columns=target_columns,
+    feature_columns=feature_columns,
     is_train=True,
 )
 fitted_pipeline_manager = train_dataset.pipeline_manager
@@ -49,8 +51,8 @@ val_dataset = PolymerGNNDataset(
     solvent_smiles_column=1,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
     mol_to_molgraph=FGMembershipMol2MolGraph(),
-    target_columns=[6, 7, 8, 9, 10, 11, 12],
-    feature_columns=[4, 5],
+    target_columns=target_columns,
+    feature_columns=feature_columns,
     is_train=False,
 )
 
@@ -61,8 +63,8 @@ test_dataset = PolymerGNNDataset(
     solvent_smiles_column=1,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
     mol_to_molgraph=FGMembershipMol2MolGraph(),
-    target_columns=[6, 7, 8, 9, 10, 11, 12],
-    feature_columns=[4, 5],
+    target_columns=target_columns,
+    feature_columns=feature_columns,
     is_train=False,
 )
 
@@ -70,8 +72,12 @@ test_dataset = PolymerGNNDataset(
 def objective(trial):
     hyperparams_config = {
         "batch_size": trial.suggest_categorical("batch_size", [16, 32, 64]),
-        "lr": trial.suggest_loguniform("lr", 1e-5, 1e-2),
-        "weight_decay": trial.suggest_loguniform("weight_decay", 1e-6, 1e-2),
+        "lr": trial.suggest_float("lr", 1e-4, 1e-2, log=True),
+        "weight_decay": trial.suggest_float("weight_decay", 0.0, 1e-3),
+        "log_diffusion_factor": trial.suggest_float(
+            "log_diffusion_factor", 1.0, 5.0
+        ),  # Tune scaling
+        "log_rg_factor": trial.suggest_float("log_rg_factor", 0.5, 3.0),
         "mpnn_output_dim": trial.suggest_int("mpnn_output_dim", 64, 256, step=32),
         "mpnn_hidden_dim": trial.suggest_int("mpnn_hidden_dim", 64, 256, step=32),
         "mpnn_depth": trial.suggest_int("mpnn_depth", 1, 5),
@@ -83,7 +89,7 @@ def objective(trial):
         "use_rdkit": trial.suggest_categorical("use_rdkit", [True, False]),
         "use_chembert": trial.suggest_categorical("use_chembert", [True, False]),
         "rdkit_selection_tensor": torch.tensor([0, 0, 1, 1, 1, 1, 1]),
-        "log_selection_tensor": torch.tensor([1, 1, 1, 0, 0, 0, 0]),
+        "log_selection_tensor": torch.tensor([1, 1, 1, 0, 0, 1]),
         "gnn_hidden_dim": trial.suggest_int("gnn_hidden_dim", 64, 256, step=32),
         "gnn_output_dim": trial.suggest_int("gnn_output_dim", 32, 128, step=32),
         "gnn_dropout": trial.suggest_uniform("gnn_dropout", 0.0, 0.5),
@@ -94,6 +100,10 @@ def objective(trial):
         "multitask_fnn_dropout": trial.suggest_uniform(
             "multitask_fnn_dropout", 0.0, 0.5
         ),
+        "weights": torch.tensor(
+            [trial.suggest_float(f"weight_{i}", 0.1, 10.0) for i in range(num_outputs)],
+            dtype=torch.float32,
+        ),
         "epochs": trial.suggest_int("epochs", 10, 100),
     }
 
@@ -102,14 +112,16 @@ def objective(trial):
         val_dataset=val_dataset,
         test_dataset=test_dataset,
         hyperparams=hyperparams_config,
+        log_dir="logs/optuna_trials/trial_1",
     )
     gnn_trainer.train(epochs=hyperparams_config["epochs"])
 
-    val_loss, _ = gnn_trainer.evaluate(
+    _, metrics = gnn_trainer.evaluate(
         gnn_trainer.val_loader, epoch=0, mode="Validation"
     )
-
-    return val_loss  # Optuna minimizes this loss
+    average_mape = metrics.get("Metrics/MAPE/Average", None)
+    # return val_loss  # Optuna minimizes this loss
+    return average_mape
 
 
 study = optuna.create_study(

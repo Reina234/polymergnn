@@ -18,7 +18,7 @@ df = pd.read_csv("tests/output_2_4_2.csv")
 
 
 # Create Transform Manager
-pipeline_manager = TransformPipelineManager([4, 5], [6, 7, 8, 9, 10, 11, 12])
+pipeline_manager = TransformPipelineManager([4, 5], [6, 7, 8, 9, 10, 11])
 
 # Apply same transformation to all features & targets
 pipeline_manager.set_feature_pipeline(StandardScaler())
@@ -37,7 +37,7 @@ train_dataset = PolymerGNNDataset(
     solvent_smiles_column=1,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
     mol_to_molgraph=FGMembershipMol2MolGraph(),
-    target_columns=[6, 7, 8, 9, 10, 11, 12],
+    target_columns=[6, 7, 8, 9, 10, 11],
     feature_columns=[4, 5],
     is_train=True,
 )
@@ -50,7 +50,7 @@ val_dataset = PolymerGNNDataset(
     solvent_smiles_column=1,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
     mol_to_molgraph=FGMembershipMol2MolGraph(),
-    target_columns=[6, 7, 8, 9, 10, 11, 12],
+    target_columns=[6, 7, 8, 9, 10, 11],
     feature_columns=[4, 5],
     is_train=False,
 )
@@ -62,27 +62,27 @@ test_dataset = PolymerGNNDataset(
     solvent_smiles_column=1,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
     mol_to_molgraph=FGMembershipMol2MolGraph(),
-    target_columns=[6, 7, 8, 9, 10, 11, 12],
+    target_columns=[6, 7, 8, 9, 10, 11],
     feature_columns=[4, 5],
     is_train=False,
 )
 
 hyperparams = {
     "batch_size": 32,
-    "lr": 0.002,
+    "lr": 0.0025,
     "weight_decay": 1e-6,
     "mpnn_output_dim": 128,
     "mpnn_hidden_dim": 96,
-    "mpnn_depth": 1,
+    "mpnn_depth": 2,
     "mpnn_dropout": 0.327396910351,
     "rdkit_selection_tensor": torch.tensor([0, 0, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
-        [1, 1, 1, 0, 0, 1, 1]
+        [1, 1, 1, 0, 0, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 192,
     "embedding_dim": 100,
     "use_rdkit": True,
-    "use_chembert": True,
+    "use_chembert": False,
     "gnn_hidden_dim": 128,
     "gnn_output_dim": 64,
     "gnn_dropout": 0.1,
