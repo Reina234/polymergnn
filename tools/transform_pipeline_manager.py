@@ -7,12 +7,19 @@ import copy
 
 
 def log_transform(x):
-    log = np.log(x)
     return np.log(x)  # log(1 + x) to avoid log(0) issues
 
 
 def inverse_log_transform(x):
     return np.exp(x)  # exp(x) - 1 to reverse log1p
+
+
+def no_log(x):
+    return x
+
+
+def no_inverse_log(x):
+    return x
 
 
 class TransformPipelineManager:
@@ -21,6 +28,7 @@ class TransformPipelineManager:
         self,
         feature_indexes: Optional[List[int]] = None,
         target_indexes: Optional[List[int]] = None,
+        log_transform_targets: Optional[bool] = True,
     ):
         self.feature_indexes = feature_indexes if feature_indexes is not None else []
         self.target_indexes = target_indexes if target_indexes is not None else []
@@ -41,6 +49,12 @@ class TransformPipelineManager:
         self.fitted_target_pipelines = (
             [None] * (2 * self.num_targets) if self.num_targets > 0 else []
         )
+        if log_transform_targets:
+            self.log_transform = log_transform
+            self.inverse_log_transform = inverse_log_transform
+        else:
+            self.log_transform = no_log
+            self.inverse_log_transform = no_inverse_log
 
     def set_feature_pipeline(self, pipeline: Pipeline) -> None:
         """Sets the same pipeline (deep-copied) for each feature column."""
@@ -73,7 +87,8 @@ class TransformPipelineManager:
                         (
                             "log_transform",
                             FunctionTransformer(
-                                log_transform, inverse_func=inverse_log_transform
+                                self.log_transform,
+                                inverse_func=self.inverse_log_transform,
                             ),
                         ),
                         ("scaler", copy.deepcopy(pipeline)),

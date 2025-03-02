@@ -73,7 +73,7 @@ test_loader = DataLoader(
 # Hyperparameter search space
 search_space = {
     "lr": [0.001],
-    "epochs": [50],
+    "epochs": [23],
     "hidden_dim": [180],
     "d_h": [100],
     "depth": [2],

@@ -1,0 +1,162 @@
+{
+    "0": {
+        "Metrics/MAE/Label_1": 0.9233942031860352,
+        "Metrics/MAE/Average": 0.9233942031860352,
+        "Metrics/MAPE/Label_1": 50.40571093559265,
+        "Metrics/MAPE/Average": 50.40571093559265,
+        "Metrics/RMSE/Label_1": 1.1436086327576878,
+        "Metrics/RMSE/Average": 1.1436086327576878
+    },
+    "1": {
+        "Metrics/MAE/Label_1": 0.911820650100708,
+        "Metrics/MAE/Average": 0.911820650100708,
+        "Metrics/MAPE/Label_1": 48.83963167667389,
+        "Metrics/MAPE/Average": 48.83963167667389,
+        "Metrics/RMSE/Label_1": 1.1466310267583741,
+        "Metrics/RMSE/Average": 1.1466310267583741
+    },
+    "2": {
+        "Metrics/MAE/Label_1": 0.9119897484779358,
+        "Metrics/MAE/Average": 0.9119897484779358,
+        "Metrics/MAPE/Label_1": 48.17070960998535,
+        "Metrics/MAPE/Average": 48.17070960998535,
+        "Metrics/RMSE/Label_1": 1.1675966620608922,
+        "Metrics/RMSE/Average": 1.1675966620608922
+    },
+    "3": {
+        "Metrics/MAE/Label_1": 0.8938330411911011,
+        "Metrics/MAE/Average": 0.8938330411911011,
+        "Metrics/MAPE/Label_1": 49.57270324230194,
+        "Metrics/MAPE/Average": 49.57270324230194,
+        "Metrics/RMSE/Label_1": 1.1206851440561503,
+        "Metrics/RMSE/Average": 1.1206851440561503
+    },
+    "4": {
+        "Metrics/MAE/Label_1": 0.8931041955947876,
+        "Metrics/MAE/Average": 0.8931041955947876,
+        "Metrics/MAPE/Label_1": 48.62888157367706,
+        "Metrics/MAPE/Average": 48.62888157367706,
+        "Metrics/RMSE/Label_1": 1.1224377912687409,
+        "Metrics/RMSE/Average": 1.1224377912687409
+    },
+    "5": {
+        "Metrics/MAE/Label_1": 0.8843377232551575,
+        "Metrics/MAE/Average": 0.8843377232551575,
+        "Metrics/MAPE/Label_1": 49.00257885456085,
+        "Metrics/MAPE/Average": 49.00257885456085,
+        "Metrics/RMSE/Label_1": 1.1157907678026973,
+        "Metrics/RMSE/Average": 1.1157907678026973
+    },
+    "6": {
+        "Metrics/MAE/Label_1": 0.873968780040741,
+        "Metrics/MAE/Average": 0.873968780040741,
+        "Metrics/MAPE/Label_1": 47.48635292053223,
+        "Metrics/MAPE/Average": 47.48635292053223,
+        "Metrics/RMSE/Label_1": 1.1180212471057056,
+        "Metrics/RMSE/Average": 1.1180212471057056
+    },
+    "7": {
+        "Metrics/MAE/Label_1": 0.8670462965965271,
+        "Metrics/MAE/Average": 0.8670462965965271,
+        "Metrics/MAPE/Label_1": 47.21468389034271,
+        "Metrics/MAPE/Average": 47.21468389034271,
+        "Metrics/RMSE/Label_1": 1.1156053343677155,
+        "Metrics/RMSE/Average": 1.1156053343677155
+    },
+    "8": {
+        "Metrics/MAE/Label_1": 0.871119499206543,
+        "Metrics/MAE/Average": 0.871119499206543,
+        "Metrics/MAPE/Label_1": 49.24127459526062,
+        "Metrics/MAPE/Average": 49.24127459526062,
+        "Metrics/RMSE/Label_1": 1.1095900528623497,
+        "Metrics/RMSE/Average": 1.1095900528623497
+    },
+    "9": {
+        "Metrics/MAE/Label_1": 0.863111674785614,
+        "Metrics/MAE/Average": 0.863111674785614,
+        "Metrics/MAPE/Label_1": 47.03299701213837,
+        "Metrics/MAPE/Average": 47.03299701213837,
+        "Metrics/RMSE/Label_1": 1.115747817943165,
+        "Metrics/RMSE/Average": 1.115747817943165
+    },
+    "10": {
+        "Metrics/MAE/Label_1": 0.8787819743156433,
+        "Metrics/MAE/Average": 0.8787819743156433,
+        "Metrics/MAPE/Label_1": 48.91490638256073,
+        "Metrics/MAPE/Average": 48.91490638256073,
+        "Metrics/RMSE/Label_1": 1.1113451267544223,
+        "Metrics/RMSE/Average": 1.1113451267544223
+    },
+    "11": {
+        "Metrics/MAE/Label_1": 0.8719838261604309,
+        "Metrics/MAE/Average": 0.8719838261604309,
+        "Metrics/MAPE/Label_1": 48.81037473678589,
+        "Metrics/MAPE/Average": 48.81037473678589,
+        "Metrics/RMSE/Label_1": 1.105923023501006,
+        "Metrics/RMSE/Average": 1.105923023501006
+    },
+    "12": {
+        "Metrics/MAE/Label_1": 0.8564422726631165,
+        "Metrics/MAE/Average": 0.8564422726631165,
+        "Metrics/MAPE/Label_1": 47.12190628051758,
+        "Metrics/MAPE/Average": 47.12190628051758,
+        "Metrics/RMSE/Label_1": 1.1041364965575566,
+        "Metrics/RMSE/Average": 1.1041364965575566
+    },
+    "13": {
+        "Metrics/MAE/Label_1": 0.852563738822937,
+        "Metrics/MAE/Average": 0.852563738822937,
+        "Metrics/MAPE/Label_1": 47.03531265258789,
+        "Metrics/MAPE/Average": 47.03531265258789,
+        "Metrics/RMSE/Label_1": 1.1080122085718087,
+        "Metrics/RMSE/Average": 1.1080122085718087
+    },
+    "14": {
+        "Metrics/MAE/Label_1": 0.8528717160224915,
+        "Metrics/MAE/Average": 0.8528717160224915,
+        "Metrics/MAPE/Label_1": 47.18806743621826,
+        "Metrics/MAPE/Average": 47.18806743621826,
+        "Metrics/RMSE/Label_1": 1.0998589620338928,
+        "Metrics/RMSE/Average": 1.0998589620338928
+    },
+    "15": {
+        "Metrics/MAE/Label_1": 0.8605101108551025,
+        "Metrics/MAE/Average": 0.8605101108551025,
+        "Metrics/MAPE/Label_1": 46.66711091995239,
+        "Metrics/MAPE/Average": 46.66711091995239,
+        "Metrics/RMSE/Label_1": 1.1266079643482674,
+        "Metrics/RMSE/Average": 1.1266079643482674
+    },
+    "16": {
+        "Metrics/MAE/Label_1": 0.8527907729148865,
+        "Metrics/MAE/Average": 0.8527907729148865,
+        "Metrics/MAPE/Label_1": 46.852460503578186,
+        "Metrics/MAPE/Average": 46.852460503578186,
+        "Metrics/RMSE/Label_1": 1.1015060626783897,
+        "Metrics/RMSE/Average": 1.1015060626783897
+    },
+    "17": {
+        "Metrics/MAE/Label_1": 0.8650084137916565,
+        "Metrics/MAE/Average": 0.8650084137916565,
+        "Metrics/MAPE/Label_1": 46.59340977668762,
+        "Metrics/MAPE/Average": 46.59340977668762,
+        "Metrics/RMSE/Label_1": 1.128874253608255,
+        "Metrics/RMSE/Average": 1.128874253608255
+    },
+    "18": {
+        "Metrics/MAE/Label_1": 0.868675172328949,
+        "Metrics/MAE/Average": 0.868675172328949,
+        "Metrics/MAPE/Label_1": 47.9224294424057,
+        "Metrics/MAPE/Average": 47.9224294424057,
+        "Metrics/RMSE/Label_1": 1.1036954210034828,
+        "Metrics/RMSE/Average": 1.1036954210034828
+    },
+    "19": {
+        "Metrics/MAE/Label_1": 0.8625478744506836,
+        "Metrics/MAE/Average": 0.8625478744506836,
+        "Metrics/MAPE/Label_1": 47.232696413993835,
+        "Metrics/MAPE/Average": 47.232696413993835,
+        "Metrics/RMSE/Label_1": 1.1031655625620533,
+        "Metrics/RMSE/Average": 1.1031655625620533
+    }
+}

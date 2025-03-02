@@ -23,3 +23,46 @@ Metrics/MAPE: 0.337980
 Metrics/RMSE: 5.038988
 ==================================================
 
+=== Test Run Summary ===
+class: FNNTrainer
+output_dim: int
+device: device
+hyperparams: dict
+model: SimpleFNN
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: NoneType
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.180887
+Metrics/MAE/Label_2: 0.015520
+Metrics/MAE/Label_3: 5.309994
+Metrics/MAE/Label_4: 2.070334
+Metrics/MAE/Label_5: 0.370145
+Metrics/MAE/Label_6: 0.441849
+Metrics/MAE/Average: 1.398121
+Metrics/MAPE/Label_1: 12.830235
+Metrics/MAPE/Label_2: 28.064549
+Metrics/MAPE/Label_3: 66.457939
+Metrics/MAPE/Label_4: 12.902442
+Metrics/MAPE/Label_5: 44.145927
+Metrics/MAPE/Label_6: 20.658131
+Metrics/MAPE/Average: 30.843204
+Metrics/RMSE/Label_1: 0.210579
+Metrics/RMSE/Label_2: 0.025608
+Metrics/RMSE/Label_3: 29.934165
+Metrics/RMSE/Label_4: 2.733384
+Metrics/RMSE/Label_5: 0.496551
+Metrics/RMSE/Label_6: 0.652754
+Metrics/RMSE/Average: 5.675507
+==================================================
+

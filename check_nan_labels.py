@@ -16,10 +16,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 df = pd.read_csv("tests/output_2_4.csv")
 
 
-# Create Transform Manager
 pipeline_manager = TransformPipelineManager([4, 5], [6, 7, 8, 9, 10, 11, 12])
-
-# Apply same transformation to all features & targets
 pipeline_manager.set_feature_pipeline(StandardScaler())
 pipeline_manager.set_target_pipeline(StandardScaler())
 

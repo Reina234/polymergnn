@@ -1,0 +1,64 @@
+=== Test Run Summary ===
+class: PretrainingTrainer
+model: PretrainingWrapper
+device: device
+hyperparams: dict
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0005
+weight_decay: 1e-05
+log_selection_tensor: [0]
+epochs: 50
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.847171
+Metrics/MAE/Average: 0.847171
+Metrics/MAPE/Label_1: 49.503183
+Metrics/MAPE/Average: 49.503183
+Metrics/RMSE/Label_1: 1.081809
+Metrics/RMSE/Average: 1.081809
+==================================================
+
+=== Test Run Summary ===
+class: PretrainingTrainer
+model: PretrainingWrapper
+device: device
+hyperparams: dict
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0005
+weight_decay: 1e-05
+log_selection_tensor: [0]
+epochs: 20
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.862548
+Metrics/MAE/Average: 0.862548
+Metrics/MAPE/Label_1: 47.232696
+Metrics/MAPE/Average: 47.232696
+Metrics/RMSE/Label_1: 1.103166
+Metrics/RMSE/Average: 1.103166
+==================================================
+

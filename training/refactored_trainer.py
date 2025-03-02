@@ -12,13 +12,16 @@ from sklearn.metrics import (
     mean_squared_error,
     r2_score,
 )
+import hashlib
 
 # mean_percentage_error() removed due to exploding values
 from tools.log_transform_helper import LogTransformHelper
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from models.polymer_gnn_full import PolymerGNNSystem
+from models.multitask_fnn_varients.full_gnn import MorganPolymerGNNSystem
 from training.refactored_batched_dataset import PolymerGNNDataset, PolymerDataset
+from models.pretrained_gnn_full import PretrainedMPNNGNN
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +47,7 @@ class Trainer(ABC):
         additional_info: Optional[Dict[str, str]] = None,
         loss_fn=torch.nn.SmoothL1Loss(),
     ):
-
+        self.unused = test_dataset
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.hyperparams = hyperparams or {}
         self.model = self.configure_model()
@@ -56,26 +59,15 @@ class Trainer(ABC):
             shuffle=True,
             collate_fn=train_dataset.collate_fn,
         )
-        self.val_loader = (
-            DataLoader(
-                val_dataset,
-                batch_size=batch_size,
-                shuffle=False,
-                collate_fn=val_dataset.collate_fn,
-            )
-            if val_dataset
-            else None
+
+        self.val_loader = DataLoader(
+            val_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            collate_fn=val_dataset.collate_fn,
         )
-        self.test_loader = (
-            DataLoader(
-                test_dataset,
-                batch_size=batch_size,
-                shuffle=False,
-                collate_fn=test_dataset.collate_fn,
-            )
-            if test_dataset
-            else None
-        )
+
+        self.test_loader = self.val_loader
 
         self.evaluation_metrics = evaluation_metrics or ["MAE", "MAPE", "RMSE"]
         self.num_batches = len(self.train_loader) if self.train_loader else 0
@@ -94,17 +86,19 @@ class Trainer(ABC):
             molecule_featuriser=train_dataset.mol_to_molgraph,
         )
 
-        if additional_info:
-            json_info = json.dumps(
-                additional_info, indent=None, separators=(", ", ": ")
-            )
-            self.summary_line = {
-                **json.loads(self.summary_line),
-                **json.loads(json_info),
-            }
-            self.summary_line = json.dumps(
-                self.summary_line, indent=None, separators=(", ", ": ")
-            )
+        if not additional_info:
+            additional_info = hyperparams
+
+        json_info = json.dumps(
+            self.convert_tensors(additional_info), indent=None, separators=(", ", ": ")
+        )
+        self.summary_line = {
+            **json.loads(self.summary_line),
+            **json.loads(json_info),
+        }
+        self.summary_line = json.dumps(
+            self.summary_line, indent=None, separators=(", ", ": ")
+        )
 
         os.makedirs(save_results_dir, exist_ok=True)
         self.save_results_dir = save_results_dir
@@ -145,6 +139,17 @@ class Trainer(ABC):
         self, labels: np.ndarray, preds: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
         pass
+
+    def convert_tensors(self, obj):
+        """Recursively convert Tensors to lists for JSON serialization."""
+        if isinstance(obj, torch.Tensor):
+            return obj.tolist()  # Converts tensor to list (works for all shapes)
+        elif isinstance(obj, dict):
+            return {k: self.convert_tensors(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self.convert_tensors(v) for v in obj]
+        else:
+            return obj
 
     def configure_optimiser(self) -> torch.optim.Optimizer:
         optim_lr = self.hyperparams.get("lr", 1e-3)
@@ -231,9 +236,10 @@ class Trainer(ABC):
                     value = mean_absolute_error(label_i, pred_i)
                     results[f"Metrics/{metric}/Label_{i+1}"] = value
                 elif metric == "MAPE":
-                    value = 100 * np.mean(
-                        np.abs(label_i - pred_i) / np.maximum(np.abs(label_i), 10**-10)
+                    value = 200 * np.mean(
+                        np.abs(pred_i - label_i) / (np.abs(pred_i) + np.abs(label_i))
                     )
+
                     results[f"Metrics/{metric}/Label_{i+1}"] = value
                 elif metric == "RMSE":
                     value = np.sqrt(mean_squared_error(label_i, pred_i))
@@ -400,14 +406,18 @@ class Trainer(ABC):
         logger.info("Learning curve data saved.")
 
     def _create_run_key(self):
-        name = "_".join(
-            [
-                f"{key}={value}"
-                for key, value in self.hyperparams.items()
-                if key != "device"
-            ]
-        )
-        return name
+
+        hyperparams_str = self.summary_line
+        run_hash = hashlib.md5(hyperparams_str.encode()).hexdigest()[
+            :10
+        ]  # Shorten to 10 characters
+
+        # Save mapping of run_hash -> hyperparams in a text file
+        mapping_file = os.path.join(self.save_results_dir, "run_mappings.txt")
+        with open(mapping_file, "a", encoding="utf-8") as f:
+            f.write(f"{run_hash}: {hyperparams_str}\n")
+
+        return run_hash  # Use hash instead of full hyperparam string
 
     def _create_learning_curve_figname(self):
         figname = self._create_run_key()
@@ -463,7 +473,6 @@ class PolymerGNNTrainer(Trainer):
         flush_tensorboard_each_epoch: bool = False,
         close_writer_on_finish: bool = True,
         additional_info: Optional[Dict[str, str]] = None,
-        loss_weights=torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0]),
     ):
         """
         Additional arguments:
@@ -486,7 +495,6 @@ class PolymerGNNTrainer(Trainer):
             flush_tensorboard_each_epoch=flush_tensorboard_each_epoch,
             close_writer_on_finish=close_writer_on_finish,
             additional_info=additional_info,
-            loss_fn=torch.nn.HuberLoss(reduction="none", delta=1.0),
         )
         self.loss_weights = self.hyperparams.get(
             "weights", torch.tensor([1, 1, 1, 1, 1, 1, 1])
@@ -530,6 +538,418 @@ class PolymerGNNTrainer(Trainer):
             embedding_dim=embedding_dim,
             use_rdkit=use_rdkit,
             use_chembert=use_chembert,
+            gnn_hidden_dim=gnn_hidden_dim,
+            gnn_output_dim=gnn_output_dim,
+            gnn_dropout=gnn_dropout,
+            gnn_num_heads=gnn_num_heads,
+            multitask_fnn_hidden_dim=multitask_fnn_hidden_dim,
+            multitask_fnn_shared_layer_dim=multitask_fnn_shared_layer_dim,
+            multitask_fnn_dropout=multitask_fnn_dropout,
+        )
+        return model
+
+    def _configure_optimiser(self) -> torch.optim.Optimizer:
+        # Base learning rate and weight decay
+        optim_lr = self.hyperparams.get("lr", 1e-3)
+        optim_weight_decay = self.hyperparams.get("weight_decay", 0.0)
+
+        # Optuna-tuned scaling factors for specific heads
+        log_diffusion_factor = self.hyperparams.get(
+            "log_diffusion_factor", 2.0
+        )  # >1 increases LR
+        log_rg_factor = self.hyperparams.get(
+            "log_rg_factor", 1.5
+        )  # Can be >1, <1, or 1
+
+        # Define parameter groups with different LRs
+        optimiser = torch.optim.Adam(
+            [
+                {
+                    "params": self.model.parameters(),
+                    "lr": optim_lr,
+                    "weight_decay": optim_weight_decay,
+                },  # Default
+                {
+                    "params": self.model.polymer_fnn.log_diffusion_head.parameters(),
+                    "lr": optim_lr * log_diffusion_factor,
+                    "weight_decay": optim_weight_decay,
+                },  # Increased LR for log_diffusion_head
+                {
+                    "params": self.model.polymer_fnn.log_rg_head.parameters(),
+                    "lr": optim_lr * log_rg_factor,
+                    "weight_decay": optim_weight_decay,
+                },  # Tuned LR for log_rg_head
+            ]
+        )
+
+        return optimiser
+
+    def compute_loss(
+        self, predictions: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+
+        loss_vect = self.loss_fn(predictions, labels)
+        weighted_loss = loss_vect * self.loss_weights
+        final_loss = torch.mean(weighted_loss)
+        return final_loss
+
+    def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Move tensors to device
+        batch = {
+            k: (v.to(self.device) if isinstance(v, torch.Tensor) else v)
+            for k, v in batch.items()
+        }
+
+        predictions = self.model(batch)
+
+        labels = batch["labels"].to(self.device)
+
+        if torch.isnan(labels).any():
+            logger.error(
+                "NaN detected in labels! Labels: %s for smiles: %s",
+                labels,
+                batch["smiles_list"],
+            )
+        filtered_labels = self.log_transform_helper.filter_target_labels(labels)
+
+        return predictions, filtered_labels
+
+    def inverse_transform(
+        self, labels: np.ndarray, preds: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        inv_labels = self.log_transform_helper.inverse_transform(
+            values_to_transform=labels
+        )
+        inv_preds = self.log_transform_helper.inverse_transform(
+            values_to_transform=preds
+        )
+        return inv_labels.numpy(), inv_preds.numpy()
+
+
+class PretrainingTrainer(Trainer):
+
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        train_dataset: PolymerGNNDataset,
+        val_dataset: Optional[PolymerGNNDataset],
+        test_dataset: Optional[PolymerGNNDataset],
+        hyperparams: dict,
+        log_dir="logs",
+        save_results_dir="results",
+        use_tensorboard=True,
+        track_learning_curve=False,
+        evaluation_metrics: List[str] = None,
+        figure_size=(8, 6),
+        writer: Optional[SummaryWriter] = None,
+        flush_tensorboard_each_epoch: bool = False,
+        close_writer_on_finish: bool = True,
+        additional_info: Optional[Dict[str, str]] = None,
+    ):
+        """
+        Additional arguments:
+         - loss_config: Dictionary for configuring loss weights or other loss-related hyperparameters.
+         - log_transform_helper: An instance of a log transform helper (like LogTransformHelper) that will
+           be used for inverse transforming predictions and labels.
+        """
+        self.model = model
+        super().__init__(
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+            test_dataset=test_dataset,
+            hyperparams=hyperparams,
+            log_dir=log_dir,
+            save_results_dir=save_results_dir,
+            use_tensorboard=use_tensorboard,
+            track_learning_curve=track_learning_curve,
+            evaluation_metrics=evaluation_metrics,
+            figure_size=figure_size,
+            writer=writer,
+            flush_tensorboard_each_epoch=flush_tensorboard_each_epoch,
+            close_writer_on_finish=close_writer_on_finish,
+            additional_info=additional_info,
+        )
+
+        log_selection_tensor = self.hyperparams.get(
+            "log_selection_tensor", torch.tensor([0, 0, 0, 0, 0, 0, 0, 0])
+        )
+        self.log_transform_helper = LogTransformHelper(
+            log_selection_tensor=log_selection_tensor,
+            target_transformers=train_dataset.pipeline_manager.target_pipelines,
+        )
+
+    def configure_model(self) -> torch.nn.Module:
+        return self.model
+
+    def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        batch = {
+            k: (v.to(self.device) if isinstance(v, torch.Tensor) else v)
+            for k, v in batch.items()
+        }
+
+        predictions = self.model(batch)
+
+        labels = batch["labels"].to(self.device)
+
+        filtered_labels = self.log_transform_helper.filter_target_labels(labels)
+
+        return predictions, filtered_labels
+
+    def inverse_transform(
+        self, labels: np.ndarray, preds: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        inv_labels = self.log_transform_helper.inverse_transform(
+            values_to_transform=labels
+        )
+        inv_preds = self.log_transform_helper.inverse_transform(
+            values_to_transform=preds
+        )
+        return inv_labels.numpy(), inv_preds.numpy()
+
+
+class MorganPolymerGNNTrainer(Trainer):
+
+    def __init__(
+        self,
+        n_bits: int,
+        train_dataset: PolymerGNNDataset,
+        val_dataset: Optional[PolymerGNNDataset],
+        test_dataset: Optional[PolymerGNNDataset],
+        hyperparams: dict,
+        log_dir="logs",
+        save_results_dir="results",
+        use_tensorboard=True,
+        track_learning_curve=False,
+        evaluation_metrics: List[str] = None,
+        figure_size=(8, 6),
+        writer: Optional[SummaryWriter] = None,
+        flush_tensorboard_each_epoch: bool = False,
+        close_writer_on_finish: bool = True,
+        additional_info: Optional[Dict[str, str]] = None,
+    ):
+        """
+        Additional arguments:
+         - loss_config: Dictionary for configuring loss weights or other loss-related hyperparameters.
+         - log_transform_helper: An instance of a log transform helper (like LogTransformHelper) that will
+           be used for inverse transforming predictions and labels.
+        """
+        self.n_bits = n_bits
+        super().__init__(
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+            test_dataset=test_dataset,
+            hyperparams=hyperparams,
+            log_dir=log_dir,
+            save_results_dir=save_results_dir,
+            use_tensorboard=use_tensorboard,
+            track_learning_curve=track_learning_curve,
+            evaluation_metrics=evaluation_metrics,
+            figure_size=figure_size,
+            writer=writer,
+            flush_tensorboard_each_epoch=flush_tensorboard_each_epoch,
+            close_writer_on_finish=close_writer_on_finish,
+            additional_info=additional_info,
+        )
+        self.loss_weights = self.hyperparams.get(
+            "weights", torch.tensor([1, 1, 1, 1, 1, 1, 1])
+        )
+        log_selection_tensor = self.hyperparams.get(
+            "log_selection_tensor", torch.tensor([0, 0, 0, 0, 0, 0, 0, 0])
+        )
+        self.log_transform_helper = LogTransformHelper(
+            log_selection_tensor=log_selection_tensor,
+            target_transformers=train_dataset.pipeline_manager.target_pipelines,
+        )
+
+    def configure_model(self) -> torch.nn.Module:
+        mpnn_output_dim = self.hyperparams.get("mpnn_output_dim", 300)
+        mpnn_hidden_dim = self.hyperparams.get("mpnn_hidden_dim", 300)
+        mpnn_depth = self.hyperparams.get("mpnn_depth", 3)
+        mpnn_dropout = self.hyperparams.get("mpnn_dropout", 0.1)
+        rdkit_selection_tensor = self.hyperparams.get("rdkit_selection_tensor", None)
+        molecule_embedding_hidden_dim = self.hyperparams.get(
+            "molecule_embedding_hidden_dim", 512
+        )
+        embedding_dim = self.hyperparams.get("embedding_dim", 256)
+        use_rdkit = self.hyperparams.get("use_rdkit", True)
+        use_chembert = self.hyperparams.get("use_chembert", True)
+        gnn_hidden_dim = self.hyperparams.get("gnn_hidden_dim", 256)
+        gnn_output_dim = self.hyperparams.get("gnn_output_dim", 128)
+        gnn_dropout = self.hyperparams.get("gnn_dropout", 0.1)
+        gnn_num_heads = self.hyperparams.get("gnn_num_heads", 4)
+        multitask_fnn_hidden_dim = self.hyperparams.get("multitask_fnn_hidden_dim", 128)
+        multitask_fnn_shared_layer_dim = self.hyperparams.get(
+            "multitask_fnn_shared_layer_dim", 128
+        )
+        multitask_fnn_dropout = self.hyperparams.get("multitask_fnn_dropout", 0.1)
+        model = MorganPolymerGNNSystem(
+            n_bits=self.n_bits,
+            mpnn_output_dim=mpnn_output_dim,
+            mpnn_hidden_dim=mpnn_hidden_dim,
+            mpnn_depth=mpnn_depth,
+            mpnn_dropout=mpnn_dropout,
+            rdkit_selection_tensor=rdkit_selection_tensor,
+            molecule_embedding_hidden_dim=molecule_embedding_hidden_dim,
+            embedding_dim=embedding_dim,
+            use_rdkit=use_rdkit,
+            use_chembert=use_chembert,
+            gnn_hidden_dim=gnn_hidden_dim,
+            gnn_output_dim=gnn_output_dim,
+            gnn_dropout=gnn_dropout,
+            gnn_num_heads=gnn_num_heads,
+            multitask_fnn_hidden_dim=multitask_fnn_hidden_dim,
+            multitask_fnn_shared_layer_dim=multitask_fnn_shared_layer_dim,
+            multitask_fnn_dropout=multitask_fnn_dropout,
+        )
+        return model
+
+    def _configure_optimiser(self) -> torch.optim.Optimizer:
+        # Base learning rate and weight decay
+        optim_lr = self.hyperparams.get("lr", 1e-3)
+        optim_weight_decay = self.hyperparams.get("weight_decay", 0.0)
+
+        # Optuna-tuned scaling factors for specific heads
+        log_diffusion_factor = self.hyperparams.get(
+            "log_diffusion_factor", 2.0
+        )  # >1 increases LR
+        log_rg_factor = self.hyperparams.get(
+            "log_rg_factor", 1.5
+        )  # Can be >1, <1, or 1
+
+        # Define parameter groups with different LRs
+        optimiser = torch.optim.Adam(
+            [
+                {
+                    "params": self.model.parameters(),
+                    "lr": optim_lr,
+                    "weight_decay": optim_weight_decay,
+                },  # Default
+                {
+                    "params": self.model.polymer_fnn.log_diffusion_head.parameters(),
+                    "lr": optim_lr * log_diffusion_factor,
+                    "weight_decay": optim_weight_decay,
+                },  # Increased LR for log_diffusion_head
+                {
+                    "params": self.model.polymer_fnn.log_rg_head.parameters(),
+                    "lr": optim_lr * log_rg_factor,
+                    "weight_decay": optim_weight_decay,
+                },  # Tuned LR for log_rg_head
+            ]
+        )
+
+        return optimiser
+
+    def compute_loss(
+        self, predictions: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+
+        loss_vect = self.loss_fn(predictions, labels)
+        weighted_loss = loss_vect * self.loss_weights
+        final_loss = torch.mean(weighted_loss)
+        return final_loss
+
+    def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Move tensors to device
+        batch = {
+            k: (v.to(self.device) if isinstance(v, torch.Tensor) else v)
+            for k, v in batch.items()
+        }
+
+        predictions = self.model(batch)
+
+        labels = batch["labels"].to(self.device)
+
+        if torch.isnan(labels).any():
+            logger.error(
+                "NaN detected in labels! Labels: %s for smiles: %s",
+                labels,
+                batch["smiles_list"],
+            )
+        filtered_labels = self.log_transform_helper.filter_target_labels(labels)
+
+        return predictions, filtered_labels
+
+    def inverse_transform(
+        self, labels: np.ndarray, preds: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        inv_labels = self.log_transform_helper.inverse_transform(
+            values_to_transform=labels
+        )
+        inv_preds = self.log_transform_helper.inverse_transform(
+            values_to_transform=preds
+        )
+        return inv_labels.numpy(), inv_preds.numpy()
+
+
+class PretrainedGNNTrainer(Trainer):
+
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        train_dataset: PolymerGNNDataset,
+        val_dataset: Optional[PolymerGNNDataset],
+        hyperparams: dict,
+        log_dir="logs",
+        save_results_dir="results",
+        use_tensorboard=True,
+        track_learning_curve=False,
+        evaluation_metrics: List[str] = None,
+        figure_size=(8, 6),
+        writer: Optional[SummaryWriter] = None,
+        flush_tensorboard_each_epoch: bool = False,
+        close_writer_on_finish: bool = True,
+        additional_info: Optional[Dict[str, str]] = None,
+    ):
+        """
+        Additional arguments:
+         - loss_config: Dictionary for configuring loss weights or other loss-related hyperparameters.
+         - log_transform_helper: An instance of a log transform helper (like LogTransformHelper) that will
+           be used for inverse transforming predictions and labels.
+        """
+
+        self.model = model
+        super().__init__(
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+            test_dataset=None,
+            hyperparams=hyperparams,
+            log_dir=log_dir,
+            save_results_dir=save_results_dir,
+            use_tensorboard=use_tensorboard,
+            track_learning_curve=track_learning_curve,
+            evaluation_metrics=evaluation_metrics,
+            figure_size=figure_size,
+            writer=writer,
+            flush_tensorboard_each_epoch=flush_tensorboard_each_epoch,
+            close_writer_on_finish=close_writer_on_finish,
+            additional_info=additional_info,
+        )
+        self.loss_weights = self.hyperparams.get(
+            "weights", torch.tensor([1, 1, 1, 1, 1, 1, 1])
+        )
+        log_selection_tensor = self.hyperparams.get(
+            "log_selection_tensor", torch.tensor([0, 0, 0, 0, 0, 0, 0, 0])
+        )
+        self.log_transform_helper = LogTransformHelper(
+            log_selection_tensor=log_selection_tensor,
+            target_transformers=train_dataset.pipeline_manager.target_pipelines,
+        )
+
+    def configure_model(self) -> torch.nn.Module:
+        embedding_dim = self.hyperparams.get("embedding_dim", 256)
+        gnn_hidden_dim = self.hyperparams.get("gnn_hidden_dim", 256)
+        gnn_output_dim = self.hyperparams.get("gnn_output_dim", 128)
+        gnn_dropout = self.hyperparams.get("gnn_dropout", 0.1)
+        gnn_num_heads = self.hyperparams.get("gnn_num_heads", 4)
+        multitask_fnn_hidden_dim = self.hyperparams.get("multitask_fnn_hidden_dim", 128)
+        multitask_fnn_shared_layer_dim = self.hyperparams.get(
+            "multitask_fnn_shared_layer_dim", 128
+        )
+        multitask_fnn_dropout = self.hyperparams.get("multitask_fnn_dropout", 0.1)
+        model = PretrainedMPNNGNN(
+            pretrained_embedding_model=self.model,
+            embedding_dim=embedding_dim,
             gnn_hidden_dim=gnn_hidden_dim,
             gnn_output_dim=gnn_output_dim,
             gnn_dropout=gnn_dropout,

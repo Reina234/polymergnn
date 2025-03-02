@@ -71,11 +71,13 @@ hyperparams = {
     "batch_size": 32,
     "lr": 0.0025,
     "weight_decay": 1e-6,
+    "log_diffusion_factor": 5.0,  # Tune scaling
+    "log_rg_factor": 3.0,
     "mpnn_output_dim": 128,
     "mpnn_hidden_dim": 96,
     "mpnn_depth": 2,
     "mpnn_dropout": 0.327396910351,
-    "rdkit_selection_tensor": torch.tensor([0, 0, 1, 1, 1, 1, 1]),
+    "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
         [1, 1, 1, 0, 0, 1]
     ),  # Only log-transform 2nd label
@@ -90,7 +92,8 @@ hyperparams = {
     "multitask_fnn_hidden_dim": 96,
     "multitask_fnn_shared_layer_dim": 128,
     "multitask_fnn_dropout": 0.1,
-    "epochs": 50,
+    "epochs": 60,
+    "weights": torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0]),
 }
 
 gnn_trainer = PolymerGNNTrainer(
@@ -99,10 +102,14 @@ gnn_trainer = PolymerGNNTrainer(
     test_dataset=test_dataset,
     hyperparams=hyperparams,
     log_dir="logs/full_gnn_trials/",
+    track_learning_curve=True,
 )
 train_loader = DataLoader(
     train_dataset, batch_size=32, collate_fn=train_dataset.collate_fn
 )
 
 
-gnn_trainer.train(epochs=hyperparams["epochs"])
+gnn_trainer.run()
+
+
+torch.save(gnn_trainer.model.state_dict(), "polymergnn_full_mod_gat.pth")

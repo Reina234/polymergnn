@@ -49,7 +49,7 @@ class PolymerMultiTaskFNN(nn.Module):
         #    nn.Dropout(dropout_rate),
         #    nn.Linear(hidden_dim, hidden_dim),
         #    nn.SiLU(),
-        #    nn.Linear(hidden_dim, 1),
+        #    nn.Linear(hidden_dim,x 1),
         # )
 
     def forward(self, batch):
@@ -66,9 +66,12 @@ class PolymerMultiTaskFNN(nn.Module):
         """
         polymer_embedding = batch["polymer_embedding"]  # [B, embedding_dim]
         polymer_feats = batch["polymer_feats"]  # [B, 2] (N, T)
-
+        scaling_factors = torch.tensor(
+            [10.0, 290.0], device=polymer_feats.device
+        )  # Ensure the same device
+        normalized_feats = polymer_feats / scaling_factors
         # Concatenate polymer features with embeddings
-        combined_input = torch.cat([polymer_embedding, polymer_feats], dim=-1)
+        combined_input = torch.cat([polymer_embedding, normalized_feats], dim=-1)
         # Shared representation
         shared_repr = self.shared_layer(combined_input)
 

@@ -1,0 +1,70 @@
+=== Test Run Summary ===
+class: PretrainingTrainer
+model: PretrainingWrapper
+device: device
+hyperparams: dict
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0005
+weight_decay: 1e-05
+log_selection_tensor: [0, 0]
+epochs: 50
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 1.554509
+Metrics/MAE/Label_2: 1.400074
+Metrics/MAE/Average: 1.477291
+Metrics/MAPE/Label_1: 76.217550
+Metrics/MAPE/Label_2: 66.403532
+Metrics/MAPE/Average: 71.310541
+Metrics/RMSE/Label_1: 1.960865
+Metrics/RMSE/Label_2: 2.049032
+Metrics/RMSE/Average: 2.004949
+==================================================
+
+=== Test Run Summary ===
+class: PretrainingTrainer
+model: PretrainingWrapper
+device: device
+hyperparams: dict
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0005
+weight_decay: 1e-05
+log_selection_tensor: [0, 0]
+epochs: 50
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 1.415723
+Metrics/MAE/Label_2: 1.259487
+Metrics/MAE/Average: 1.337605
+Metrics/MAPE/Label_1: 77.141374
+Metrics/MAPE/Label_2: 62.054253
+Metrics/MAPE/Average: 69.597813
+Metrics/RMSE/Label_1: 1.763142
+Metrics/RMSE/Label_2: 1.895306
+Metrics/RMSE/Average: 1.829224
+==================================================
+

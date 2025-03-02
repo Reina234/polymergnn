@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from models.molecule_embedding_model import MoleculeEmbeddingModel
 from modules.configured_mpnn import ConfiguredMPNN
-from modules.gat_module import GATModule
+from modules.gat_module import GATModuleMod
 from models.poly_multitask_fnn import PolymerMultiTaskFNN
 from featurisers.molecule_featuriser import RDKitFeaturizer
 from chemprop.nn import NormAggregation
@@ -77,7 +77,7 @@ class PolymerGNNSystem(nn.Module):
             use_chembert=use_chembert,
         )
 
-        self.polymer_gnn = GATModule(
+        self.polymer_gnn = GATModuleMod(
             input_dim=embedding_dim,
             hidden_dim=gnn_hidden_dim,
             output_dim=gnn_output_dim,
@@ -91,42 +91,6 @@ class PolymerGNNSystem(nn.Module):
             hidden_dim=multitask_fnn_hidden_dim,
             dropout_rate=multitask_fnn_dropout,
         )
-
-    def configure_optimiser(self) -> torch.optim.Optimizer:
-        # Base learning rate and weight decay
-        optim_lr = self.hyperparams.get("lr", 1e-3)
-        optim_weight_decay = self.hyperparams.get("weight_decay", 0.0)
-
-        # Optuna-tuned scaling factors for specific heads
-        log_diffusion_factor = self.hyperparams.get(
-            "log_diffusion_factor", 2.0
-        )  # >1 increases LR
-        log_rg_factor = self.hyperparams.get(
-            "log_rg_factor", 1.5
-        )  # Can be >1, <1, or 1
-
-        # Define parameter groups with different LRs
-        optimiser = torch.optim.Adam(
-            [
-                {
-                    "params": self.model.parameters(),
-                    "lr": optim_lr,
-                    "weight_decay": optim_weight_decay,
-                },  # Default
-                {
-                    "params": self.model.polymer_fnn.log_diffusion_head.parameters(),
-                    "lr": optim_lr * log_diffusion_factor,
-                    "weight_decay": optim_weight_decay,
-                },  # Increased LR for log_diffusion_head
-                {
-                    "params": self.model.polymer_fnn.log_rg_head.parameters(),
-                    "lr": optim_lr * log_rg_factor,
-                    "weight_decay": optim_weight_decay,
-                },  # Tuned LR for log_rg_head
-            ]
-        )
-
-        return optimiser
 
     def forward(self, batch, return_intermediates=False):
         batch["node_features"], mpnn_out, chemberta_emb, rdkit_emb = (

@@ -1,0 +1,233 @@
+import shap
+import numpy as np
+import torch
+from tools.transform_pipeline_manager import TransformPipelineManager
+from sklearn.preprocessing import StandardScaler
+import pandas as pd
+from tools.mol_to_molgraph import FGMembershipMol2MolGraph
+from sklearn.model_selection import train_test_split
+from training.refactored_batched_dataset import PolymerMorganGNNDataset
+from tools.smiles_transformers import PolymerisationSmilesTransform
+from torch.utils.data import DataLoader
+from models.polymer_gnn_no_mpnn import PolymerGNNNoMPNNsSystem
+from modules.configured_mpnn import ConfiguredMPNN
+from chemprop.nn import NormAggregation
+
+df = pd.read_csv("tests/output_2_4_2.csv")
+
+feature_columns = [4, 5]
+target_columns = [6, 7, 8, 9, 10, 11]
+monomer_smiles_column = 3
+solvent_smiles_column = 1
+
+pipeline_manager = TransformPipelineManager(feature_columns, target_columns)
+
+pipeline_manager.set_feature_pipeline(StandardScaler())
+pipeline_manager.set_target_pipeline(StandardScaler())
+
+
+train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
+
+
+n_bits = 2048
+
+train_dataset = PolymerMorganGNNDataset(
+    data=train_df,
+    n_bits=n_bits,
+    pipeline_manager=pipeline_manager,
+    monomer_smiles_column=monomer_smiles_column,
+    solvent_smiles_column=solvent_smiles_column,
+    monomer_smiles_transformer=PolymerisationSmilesTransform(),
+    mol_to_molgraph=FGMembershipMol2MolGraph(),
+    target_columns=target_columns,
+    feature_columns=feature_columns,
+    is_train=True,
+)
+fitted_pipeline_manager = train_dataset.pipeline_manager
+
+val_dataset = PolymerMorganGNNDataset(
+    data=val_df,
+    n_bits=n_bits,
+    pipeline_manager=fitted_pipeline_manager,
+    monomer_smiles_column=monomer_smiles_column,
+    solvent_smiles_column=solvent_smiles_column,
+    monomer_smiles_transformer=PolymerisationSmilesTransform(),
+    mol_to_molgraph=FGMembershipMol2MolGraph(),
+    target_columns=target_columns,
+    feature_columns=feature_columns,
+    is_train=False,
+)
+
+
+val_loader = DataLoader(
+    val_dataset, batch_size=32, shuffle=False, collate_fn=val_dataset.collate_fn
+)
+
+
+idx = train_dataset[0]
+batch_mol = idx[1][0]
+
+########################## CONFIG ##########################
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+rdkit_selection_tensor = torch.tensor([0, 0, 1, 1, 1, 1, 1])
+mpnn_output_dim = 128
+mpnn_hidden_dim = 96
+mpnn_depth = 2
+mpnn_dropout = 0.327396910351
+molecule_embedding_hidden_dim = 192
+embedding_dim = 100
+use_rdkit = True
+use_chembert = False
+fnn_hidden_dim = 256
+output_dim = len(target_columns)
+gnn_hidden_dim = 128
+gnn_output_dim = 64
+gnn_dropout = 0.1
+gnn_num_heads = 4
+multitask_fnn_hidden_dim = 96
+multitask_fnn_shared_layer_dim = 128
+multitask_fnn_dropout = 0.1
+epochs = 50
+weights = torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0])
+
+########################## MODEL ##########################
+mpnn = ConfiguredMPNN(
+    output_dim=mpnn_output_dim,
+    aggregation_method=NormAggregation(),
+    d_h=mpnn_hidden_dim,
+    depth=mpnn_depth,
+    dropout=mpnn_dropout,
+    undirected=True,
+)
+
+mpnn.initialize_model(batch_mol)
+
+model = PolymerGNNNoMPNNsSystem(
+    mpnn=mpnn,
+    rdkit_selection_tensor=rdkit_selection_tensor,
+    molecule_embedding_hidden_dim=molecule_embedding_hidden_dim,
+    embedding_dim=embedding_dim,
+    use_rdkit=use_rdkit,
+    use_chembert=use_chembert,
+    gnn_hidden_dim=gnn_hidden_dim,
+    gnn_output_dim=gnn_output_dim,
+    gnn_dropout=gnn_dropout,
+    gnn_num_heads=gnn_num_heads,
+    multitask_fnn_hidden_dim=multitask_fnn_hidden_dim,
+    multitask_fnn_shared_layer_dim=multitask_fnn_shared_layer_dim,
+    multitask_fnn_dropout=multitask_fnn_dropout,
+)
+
+pretrained_dict = torch.load("polymergnn_full_mod_gat.pth", weights_only=True)
+
+model.load_state_dict(pretrained_dict, strict=False)
+
+
+######################## EXTRACTION ############################
+
+model.eval()
+sample_batch = next(iter(val_loader))
+print(sample_batch.keys())
+print(sample_batch["batch_mol_graph"])
+
+
+with torch.no_grad():
+    predictions, mpnn_out, chemberta_emb, rdkit_emb, polymer_embedding = model(
+        sample_batch, return_intermediates=True
+    )
+
+
+mpnn_out_np = mpnn_out.detach().cpu().numpy()
+chemberta_emb_np = chemberta_emb.detach().cpu().numpy()
+rdkit_emb_np = rdkit_emb.detach().cpu().numpy()
+polymer_embedding_np = polymer_embedding.detach().cpu().numpy()
+polymer_feats_np = sample_batch["polymer_feats"].detach().cpu().numpy()
+
+
+print(mpnn_out_np.shape)
+print(chemberta_emb_np.shape)
+print(rdkit_emb_np.shape)
+print(polymer_embedding_np.shape)
+print(polymer_feats_np.shape)
+
+import shap
+import torch
+import numpy as np
+
+# Convert all tensors to numpy arrays
+shap_input_batch = {
+    "chemberta_tensor": sample_batch["chemberta_tensor"].detach().cpu().numpy(),
+    "rdkit_tensor": sample_batch["rdkit_tensor"].cpu().numpy(),
+    "fingerprints_tensor": sample_batch["fingerprints_tensor"].cpu().numpy(),
+    "polymer_feats": sample_batch["polymer_feats"].cpu().numpy(),
+}
+
+# Ensure that all feature tensors have the same batch dimension
+batch_size = shap_input_batch["chemberta_tensor"].shape[0]
+
+# Flatten feature dimensions if necessary
+shap_input_batch = {
+    key: value.reshape(batch_size, -1) for key, value in shap_input_batch.items()
+}
+
+# Stack them along feature axis
+shap_input_array = np.concatenate(list(shap_input_batch.values()), axis=1)
+
+# SHAP masker for independent feature perturbation
+masker = shap.maskers.Independent(shap_input_array)
+
+
+def shap_model_wrapper(input_array):
+    """Custom SHAP model wrapper to handle tensor reconstruction."""
+    with torch.no_grad():
+        batch_size = input_array.shape[0]
+
+        # Extract input dimensions based on their expected sizes
+        chemberta_dim = shap_input_batch["chemberta_tensor"].shape[1]
+        rdkit_dim = shap_input_batch["rdkit_tensor"].shape[1]
+        fingerprint_dim = shap_input_batch["fingerprints_tensor"].shape[1]
+        polymer_feats_dim = shap_input_batch["polymer_feats"].shape[1]
+
+        # Split input array into individual tensors
+        chemberta_emb = torch.tensor(
+            input_array[:, :chemberta_dim], dtype=torch.float32
+        )
+        rdkit_emb = torch.tensor(
+            input_array[:, chemberta_dim : chemberta_dim + rdkit_dim],
+            dtype=torch.float32,
+        )
+        fingerprints_emb = torch.tensor(
+            input_array[
+                :,
+                chemberta_dim + rdkit_dim : chemberta_dim + rdkit_dim + fingerprint_dim,
+            ],
+            dtype=torch.float32,
+        )
+        polymer_feats_emb = torch.tensor(
+            input_array[:, -polymer_feats_dim:], dtype=torch.float32
+        )
+
+        # Reconstruct batch dictionary
+        batch = {
+            "chemberta_tensor": chemberta_emb,
+            "rdkit_tensor": rdkit_emb,
+            "fingerprints_tensor": fingerprints_emb,
+            "polymer_feats": polymer_feats_emb,
+        }
+
+        # Forward pass through PolymerGNN model
+        return model(batch).cpu().numpy()
+
+
+# Initialize SHAP Explainer
+explainer = shap.Explainer(shap_model_wrapper, masker)
+
+# Compute SHAP values
+shap_values = explainer(shap_input_array)
+
+# Generate Summary Plot
+shap.summary_plot(
+    shap_values,
+    shap_input_array,
+    feature_names=["ChemBERTa", "RDKit", "Fingerprints", "Polymer Features"],
+)

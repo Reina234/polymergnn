@@ -27,7 +27,7 @@ class ConfiguredMPNN(nn.Module):
         self.d_e = None
         self.d_v = None
 
-    def _initialize_model(self, batch_mol_graph: BatchMolGraph):
+    def initialize_model(self, batch_mol_graph: BatchMolGraph):
         """Initializes BondMessagePassing using dimensions from the input batch."""
         self.d_e = batch_mol_graph.E.shape[1]  # Edge feature dimension
         self.d_v = batch_mol_graph.V.shape[1]  # Node feature dimension
@@ -47,9 +47,10 @@ class ConfiguredMPNN(nn.Module):
                 input_dim=self.d_h, hidden_dim=self.d_h, n_tasks=self.output_dim
             ),
         )
+        return self.model
 
     def forward(self, batch_mol_graph: BatchMolGraph):
         """Runs the forward pass, initializing the model if needed."""
         if self.model is None:
-            self._initialize_model(batch_mol_graph)
+            self.initialize_model(batch_mol_graph)
         return self.model(batch_mol_graph)

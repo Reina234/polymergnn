@@ -401,7 +401,6 @@ class SimpleDataset(PolymerDataset):
         self.edge_index_creator = BondHBondEdgeCreator()
         self.chemberta_embedder = ChemBERTaEmbedder()
         self.rdkit_featuriser = RDKitFeaturizer()
-        self.rdkit_featuriser = RDKitFeaturizer()
         self.morgan_generator = GetMorganGenerator(radius=radius, fpSize=n_bits)
         super().__init__(
             data=data,
@@ -462,15 +461,187 @@ class SimpleDataset(PolymerDataset):
 
         features, targets = self._get_default_items(idx=idx)
 
+        return {
+            "idx": idx,
+            "chemberta": pooled_chemberta,
+            "rdkit": pooled_rdkit,
+            "features": features,
+            "targets": targets,
+            "fingerprint": pooled_fingerprint,
+        }
+
+    @staticmethod
+    def collate_fn(batch):
+        return default_collate(batch)
+
+
+class PolymerMorganGNNDataset(PolymerDataset):
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        n_bits: int,
+        pipeline_manager: TransformPipelineManager,
+        monomer_smiles_transformer: SmilesTransformer,
+        solvent_smiles_transformer: SmilesTransformer = NoSmilesTransform(),
+        mol_to_molgraph: Mol2MolGraph = FGMembershipMol2MolGraph(),
+        monomer_smiles_column: int = 0,
+        solvent_smiles_column: Optional[int] = None,
+        feature_columns: Optional[List[int]] = None,
+        target_columns: Optional[List[int]] = None,
+        radius: int = 2,
+        is_train: bool = False,
+    ):
+        self.edge_index_creator = BondHBondEdgeCreator()
+        self.chemberta_embedder = ChemBERTaEmbedder()
+        self.rdkit_featuriser = RDKitFeaturizer()
+        self.morgan_generator = GetMorganGenerator(radius=radius, fpSize=n_bits)
+        super().__init__(
+            data=data,
+            pipeline_manager=pipeline_manager,
+            monomer_smiles_transformer=monomer_smiles_transformer,
+            solvent_smiles_transformer=solvent_smiles_transformer,
+            mol_to_molgraph=mol_to_molgraph,
+            target_columns=target_columns,
+            feature_columns=feature_columns,
+            monomer_smiles_column=monomer_smiles_column,
+            solvent_smiles_column=solvent_smiles_column,
+            is_train=is_train,
+        )
+
+    def smiles_to_fingerprint(self, mol: Mol, radius=2):
+
+        if mol is None:
+            fingerprint = np.zeros(self.n_bits)  # Zero-vector for invalid SMILES
+        else:
+            fingerprint = self.morgan_generator.GetCountFingerprintAsNumPy(mol)
+
+        return fingerprint
+
+    def pool_features(self, features_tensor: torch.Tensor) -> torch.Tensor:
+        non_solvent_features = features_tensor[:-1]  # Exclude solvent
+        solvent_feature = features_tensor[-1]  # Last molecule is always the solvent
+
+        if len(non_solvent_features) > 0:
+            pooled_feature = torch.mean(non_solvent_features, dim=0)
+        else:
+            pooled_feature = (
+                solvent_feature.clone()
+            )  # Edge case: If only solvent exists
+
+        final_feature = torch.cat([pooled_feature, solvent_feature], dim=0)
+        return final_feature  # Shape: (2 * feature_dim,)
+
+    def _convert_mols_to_molgraph(self):
+        molgraphs = [
+            [self.mol_to_molgraph.convert(mol) for mol in mols] for mols in self.mols
+        ]
+
+        return molgraphs
+
+    def __getitem__(self, idx):
+        mols = self.mols[idx]
+        smiles_list = self.smiles_lists[idx]
+        chemberta_vals = [
+            self.chemberta_embedder.embed(smiles) for smiles in smiles_list
+        ]
+        rdkit_list = [self.rdkit_featuriser.featurise(mol) for mol in mols]
+        edge_indeces, edge_attr = (
+            self.edge_index_creator.create_edge_indeces_and_attributes(
+                rdkit_list=rdkit_list, featuriser=self.rdkit_featuriser
+            )
+        )
+        molgraphs = self.molgraphs[idx]
+        features, targets = self._get_default_items(idx=idx)
+
+        fingerprints = [self.smiles_to_fingerprint(mol) for mol in mols]
+        fingerprints_tensor = torch.tensor(np.array(fingerprints), dtype=torch.float32)
+        pooled_fingerprint = self.pool_features(fingerprints_tensor)
+
         return (
             idx,
-            pooled_chemberta,
-            pooled_rdkit,
+            molgraphs,
+            chemberta_vals,
+            rdkit_list,
             features,
             targets,
+            edge_indeces,
+            edge_attr,
+            smiles_list,
             pooled_fingerprint,
         )
 
     @staticmethod
     def collate_fn(batch):
-        return default_collate(batch)
+        all_molgraphs = []
+        chemberta_flat = []
+        rdkit_flat = []
+        system_indices = []
+        polymer_mapping = []
+        polymer_feats_list = []
+        labels_list = []
+        smiles_list = []
+        fingerprint_list = []
+
+        edge_indices_list = []
+        edge_attr_list = []
+        solvent_labels_list = []
+
+        node_offset = 0  # Keeps track of node indices across polymers
+
+        for sys_idx, (
+            _,
+            molgraphs,
+            chemberta_vals,
+            rdkit_list,
+            poly_feats,
+            targets,
+            edge_indices,
+            edge_attr,
+            smiles,
+            pooled_fingerprint,
+        ) in enumerate(batch):
+
+            num_monomers = len(molgraphs)
+
+            # Adjust edge indices so they don't overlap across polymers
+            adjusted_edge_indices = edge_indices + node_offset  # Shift edge indices
+            edge_indices_list.append(adjusted_edge_indices)
+            edge_attr_list.append(edge_attr)
+
+            for m in range(num_monomers):
+                all_molgraphs.append(molgraphs[m])
+                chemberta_flat.append(chemberta_vals[m])
+                rdkit_flat.append(rdkit_list[m])
+                system_indices.append(sys_idx)
+                polymer_mapping.append(sys_idx)  # Each polymer has a unique index
+
+                # Assign solvent labels: Solvent is always the LAST molecule in each polymer
+                solvent_label = 1 if m == (num_monomers - 1) else 0
+                solvent_labels_list.append(solvent_label)
+
+            node_offset += num_monomers  # Increment offset for the next polymer
+
+            smiles_list.append(smiles)
+            polymer_feats_list.append(poly_feats)
+            labels_list.append(targets)
+            fingerprint_list.append(pooled_fingerprint)
+
+        batch_mol_graph = BatchMolGraph(all_molgraphs)
+
+        return {
+            "batch_mol_graph": batch_mol_graph,
+            "chemberta_tensor": stack_tensors(chemberta_flat),
+            "rdkit_tensor": stack_tensors(rdkit_flat),
+            "system_indices": system_indices,
+            "polymer_feats": stack_tensors(polymer_feats_list),
+            "polymer_mapping": torch.tensor(polymer_mapping),
+            "labels": stack_tensors(labels_list),
+            "edge_index": torch.cat(edge_indices_list, dim=1),
+            "edge_attr": torch.cat(edge_attr_list, dim=0),
+            "solvent_labels": torch.tensor(solvent_labels_list).unsqueeze(
+                1
+            ),  # Shape (N, 1)
+            "smiles_list": smiles_list,
+            "fingerprints_tensor": stack_tensors(fingerprint_list),
+        }

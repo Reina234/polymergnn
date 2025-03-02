@@ -73,7 +73,7 @@ class BenchmarkTrainer(Trainer, ABC):
         }
         predictions = self.model(batch)
 
-        labels = batch[-2].to(self.device)
+        labels = batch["targets"].to(self.device)
 
         filtered_labels = self.log_transform_helper.filter_target_labels(labels)
 

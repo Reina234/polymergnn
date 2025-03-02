@@ -14,6 +14,6 @@ class SimpleFNN(nn.Module):
         )
 
     def forward(self, batch):
-        x = batch[-1]  # Extract fingerprints_tensor from batch
+        x = batch["fingerprint"]  # Extract fingerprints_tensor from batch
         x = x.view(x.shape[0], -1)  # Flatten for FNN
         return self.model(x)
