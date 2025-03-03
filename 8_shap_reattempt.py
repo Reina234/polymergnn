@@ -47,8 +47,8 @@ train_dataset = PolymerMorganGNNDataset(
 )
 fitted_pipeline_manager = train_dataset.pipeline_manager
 
-val_dataset = PolymerMorganGNNDataset(
-    data=val_df,
+shap_dataset = PolymerMorganGNNDataset(
+    data=shap_df,
     n_bits=n_bits,
     pipeline_manager=fitted_pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,
@@ -61,8 +61,8 @@ val_dataset = PolymerMorganGNNDataset(
 )
 
 
-val_loader = DataLoader(
-    val_dataset, batch_size=1, shuffle=False, collate_fn=val_dataset.collate_fn
+shap_loader = DataLoader(
+    shap_dataset, batch_size=1, shuffle=False, collate_fn=shap_dataset.collate_fn
 )
 
 
@@ -124,89 +124,6 @@ model.load_state_dict(pretrained_dict, strict=False)
 
 
 ######################## MODEL WRAPPER ############################
-
-
-def model_wrapper(perturbed_inputs):
-    if isinstance(perturbed_inputs, np.ndarray):
-        perturbed_inputs = torch.tensor(perturbed_inputs, dtype=torch.float32)
-
-    idx = 0
-    perturbed_polymer_rdkit = perturbed_inputs[:, idx : idx + polymer_rdkit.shape[0]]
-    idx += polymer_rdkit.shape[0]
-
-    perturbed_solvent_rdkit = perturbed_inputs[:, idx : idx + solvent_rdkit.shape[0]]
-    idx += solvent_rdkit.shape[0]
-
-    perturbed_polymer_fingerprint = perturbed_inputs[:, idx : idx + 2048]
-    idx += 2048
-
-    perturbed_solvent_fingerprint = perturbed_inputs[:, idx : idx + 2048]
-    idx += 2048
-
-    perturbed_polymer_mpnn = perturbed_inputs[:, idx : idx + polymer_mpnn_out.shape[0]]
-    idx += polymer_mpnn_out.shape[0]
-
-    perturbed_solvent_mpnn = perturbed_inputs[:, idx : idx + solvent_mpnn_out.shape[0]]
-    idx += solvent_mpnn_out.shape[0]
-
-    perturbed_polymer_feats = perturbed_inputs[:, idx : idx + polymer_feats.shape[1]]
-    idx += polymer_feats.shape[1]
-
-    concatenated_rdkit = torch.cat(
-        [perturbed_polymer_rdkit, perturbed_solvent_rdkit], dim=0
-    )
-    concatinated_fingerprints = torch.cat(
-        [perturbed_polymer_fingerprint, perturbed_solvent_fingerprint], dim=1
-    )
-    concatenated_mpnn = torch.cat(
-        [perturbed_polymer_mpnn, perturbed_solvent_mpnn], dim=0
-    )
-
-    model_output = (
-        model(
-            concatenated_mpnn,
-            concatenated_rdkit,
-            perturbed_polymer_feats,
-            concatinated_fingerprints,
-            edge_index,
-            edge_attr,
-            polymer_mapping,
-        )
-        .detach()
-        .cpu()
-        .numpy()
-    )
-
-    return model_output
-
-
-########################## MODEL DECONSTRUCTION ##########################
-
-model.eval()
-
-
-for batch in val_loader:
-    if batch["polymer_mapping"].shape[0] == 2:  # Check if tensor has exactly 2 elements
-        sample_batch = batch
-        break
-
-
-mpnn_out = model.mpnn(sample_batch["batch_mol_graph"])
-polymer_mpnn_out = mpnn_out[0]
-solvent_mpnn_out = mpnn_out[1]
-
-edge_index = sample_batch["edge_index"]
-edge_attr = sample_batch["edge_attr"]
-polymer_mapping = sample_batch["polymer_mapping"]
-
-polymer_rdkit = sample_batch["rdkit_tensor"][0]
-solvent_rdkit = sample_batch["rdkit_tensor"][1]
-
-polymer_fingerprint = sample_batch["fingerprints_tensor"][:, :2048]
-solvent_fingerprint = sample_batch["fingerprints_tensor"][:, 2048:]
-
-polymer_feats = sample_batch["polymer_feats"]
-
 rdkit_feature_names = [
     "HDonors",
     "HAcceptors",
@@ -218,61 +135,163 @@ rdkit_feature_names = [
     "RingCount",
     "FractionCSP3",
 ]
-shap_input = torch.cat(
-    [
-        polymer_rdkit.unsqueeze(0),  # Shape (1, num_rdkit_features)
-        solvent_rdkit.unsqueeze(0),  # Shape (1, num_rdkit_features)
-        polymer_fingerprint,  # Shape (1, 2048)
-        solvent_fingerprint,  # Shape (1, 2048)
-        polymer_mpnn_out.unsqueeze(0),  # Shape (1, mpnn_dim)
-        solvent_mpnn_out.unsqueeze(0),  # Shape (1, mpnn_dim)
-        polymer_feats,  # Shape (1, num_polymer_features), **not perturbed**
-    ],
-    dim=1,
-)  # Shape: (1, total_features)
 
 
-shap_input = shap_input.detach().cpu().numpy()
-explainer = shap.KernelExplainer(model_wrapper, shap.sample(shap_input, 100))
-shap_values = explainer.shap_values(shap_input)
+# Collect all 7 batches
+all_batches = []
+for batch in shap_loader:
+    if batch["polymer_mapping"].shape[0] == 2:  # Your validation condition
+        all_batches.append(batch)
+        if len(all_batches) >= 7:
+            break
 
-shap_values_np = np.array(shap_values)
+# Preprocess batches into SHAP-compatible format
+shap_inputs = []
+for batch in all_batches:
+    # Replicate your original preprocessing logic
+    polymer_rdkit = batch["rdkit_tensor"][0].unsqueeze(0)
+    solvent_rdkit = batch["rdkit_tensor"][1].unsqueeze(0)
+    polymer_fingerprint = batch["fingerprints_tensor"][:, :2048]
+    solvent_fingerprint = batch["fingerprints_tensor"][:, 2048:]
+    polymer_mpnn_out = model.mpnn(batch["batch_mol_graph"])[0].unsqueeze(0)
+    solvent_mpnn_out = model.mpnn(batch["batch_mol_graph"])[1].unsqueeze(0)
+    polymer_feats = batch["polymer_feats"]
+
+    shap_input = (
+        torch.cat(
+            [
+                polymer_rdkit,
+                solvent_rdkit,
+                polymer_fingerprint,
+                solvent_fingerprint,
+                polymer_mpnn_out,
+                solvent_mpnn_out,
+                polymer_feats,
+            ],
+            dim=1,
+        )
+        .detach()
+        .cpu()
+        .numpy()
+    )
+
+    shap_inputs.append(shap_input)
+
+background_data = np.concatenate(shap_inputs, axis=0)
 
 
-polymer_fingerprint_shap = np.mean(shap_values_np[:, 18:2066], axis=1, keepdims=True)
-solvent_fingerprint_shap = np.mean(shap_values_np[:, 2066:4114], axis=1, keepdims=True)
+def model_wrapper(perturbed_inputs):
+    if isinstance(perturbed_inputs, np.ndarray):
+        perturbed_inputs = torch.tensor(perturbed_inputs, dtype=torch.float32)
 
-polymer_mpnn_shap = np.mean(shap_values_np[:, 4114:4242], axis=1, keepdims=True)
-solvent_mpnn_shap = np.mean(shap_values_np[:, 4242:4370], axis=1, keepdims=True)
+    # Ensure batch dimension is handled
+    batch_size = perturbed_inputs.shape[0]
 
-shap_aggregated_2d = np.concatenate(
-    [
-        shap_values_np[:, :18].squeeze().T,
-        polymer_fingerprint_shap.reshape(-1, 1),
-        solvent_fingerprint_shap.reshape(-1, 1),
-        polymer_mpnn_shap.reshape(-1, 1),
-        solvent_mpnn_shap.reshape(-1, 1),
-        shap_values_np[:, 4370:].squeeze().T,
-    ],
-    axis=1,
+    outputs = []
+    for i in range(batch_size):
+        idx = 0
+        single_input = perturbed_inputs[i].unsqueeze(0)  # (1, n_features)
+
+        # Split into components (replicate your original logic)
+        perturbed_polymer_rdkit = single_input[:, idx : idx + 9]
+        idx += 9
+        perturbed_solvent_rdkit = single_input[:, idx : idx + 9]
+        idx += 9
+        perturbed_polymer_fingerprint = single_input[:, idx : idx + 2048]
+        idx += 2048
+        perturbed_solvent_fingerprint = single_input[:, idx : idx + 2048]
+        idx += 2048
+        perturbed_polymer_mpnn = single_input[
+            :, idx : idx + 128
+        ]  # Assuming mpnn_dim=128
+        idx += 128
+        perturbed_solvent_mpnn = single_input[:, idx : idx + 128]
+        idx += 128
+        perturbed_polymer_feats = single_input[
+            :, idx : idx + 2
+        ]  # Assuming N/T features
+
+        # Get static features from first batch (adapt as needed)
+        static_args = (
+            all_batches[0]["edge_index"],
+            all_batches[0]["edge_attr"],
+            all_batches[0]["polymer_mapping"],
+        )
+
+        output = (
+            model(
+                torch.cat([perturbed_polymer_mpnn, perturbed_solvent_mpnn], dim=0),
+                torch.cat([perturbed_polymer_rdkit, perturbed_solvent_rdkit], dim=0),
+                perturbed_polymer_feats,
+                torch.cat(
+                    [perturbed_polymer_fingerprint, perturbed_solvent_fingerprint],
+                    dim=1,
+                ),
+                *static_args,
+            )
+            .detach()
+            .cpu()
+            .numpy(),
+        )
+
+        outputs.append(output)
+
+    return np.concatenate(outputs, axis=0)
+
+
+explainer = shap.KernelExplainer(
+    model_wrapper, shap.sample(background_data, 7)  # Use all 7 samples as background
 )
 
+# For explanation, use first sample as example
+sample_idx = 0
+shap_values = explainer.shap_values(background_data[sample_idx : sample_idx + 1])
+
+
+# Process all samples
+all_shap_values = []
+for i in range(7):
+    shap_values = explainer.shap_values(background_data[i : i + 1])
+    all_shap_values.append(shap_values)
+
+# Combine SHAP values (assuming regression task)
+shap_values_np = np.stack(all_shap_values, axis=0)  # Shape: (7, n_features, n_outputs)
+
+
+def aggregate_shap(shap_array):
+    polymer_fingerprint = np.mean(shap_array[:, 18:2066, :], axis=1)
+    solvent_fingerprint = np.mean(shap_array[:, 2066:4114, :], axis=1)
+    polymer_mpnn = np.mean(shap_array[:, 4114:4242, :], axis=1)
+    solvent_mpnn = np.mean(shap_array[:, 4242:4370, :], axis=1)
+
+    return np.concatenate(
+        [
+            shap_array[:, :18, :],  # RDKit features
+            polymer_fingerprint[:, None, :],
+            solvent_fingerprint[:, None, :],
+            polymer_mpnn[:, None, :],
+            solvent_mpnn[:, None, :],
+            shap_array[:, 4370:, :],  # Polymer features
+        ],
+        axis=1,
+    )
+
+
+shap_aggregated = aggregate_shap(shap_values_np)
+
+# For summary plot (average across samples)
+shap_aggregated_2d = np.mean(shap_aggregated, axis=0)  # (n_features, n_outputs)
 
 feature_names = (
-    [f"{name}_polymer" for name in rdkit_feature_names]  # Polymer RDKit
-    + [f"{name}_solvent" for name in rdkit_feature_names]  # Solvent RDKit
-    + [
-        "polymer_fingerprint",
-        "solvent_fingerprint",  # Aggregated groups
-        "polymer_mpnn",
-        "solvent_mpnn",
-    ]
-    + ["N", "T"]  # Polymer features
+    [f"{name}_polymer" for name in rdkit_feature_names]
+    + [f"{name}_solvent" for name in rdkit_feature_names]
+    + ["polymer_fingerprint", "solvent_fingerprint", "polymer_mpnn", "solvent_mpnn"]
+    + ["N", "T"]
 )
 
-
 shap.summary_plot(
-    shap_aggregated_2d,
+    shap_aggregated_2d.T,  # SHAP expects (n_samples, n_features)
+    features=np.zeros((1, len(feature_names))),  # Dummy features for names
     feature_names=feature_names,
-    plot_type="bar",  # Use "dot" for detailed view or "bar" for global importance
+    plot_type="bar",
 )
