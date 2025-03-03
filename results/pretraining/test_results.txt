@@ -62,3 +62,39 @@ Metrics/RMSE/Label_1: 1.103166
 Metrics/RMSE/Average: 1.103166
 ==================================================
 
+=== Test Run Summary ===
+class: PretrainingTrainer
+model: PretrainingWrapper
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0005
+weight_decay: 1e-05
+log_selection_tensor: [0, 0]
+epochs: 20
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 1.935656
+Metrics/MAE/Label_2: 1.966993
+Metrics/MAE/Average: 1.951324
+Metrics/MAPE/Label_1: 69.452989
+Metrics/MAPE/Label_2: 68.105578
+Metrics/MAPE/Average: 68.779284
+Metrics/RMSE/Label_1: 3.245212
+Metrics/RMSE/Label_2: 2.939238
+Metrics/RMSE/Average: 3.092225
+==================================================
+

@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from models.shap_modified_models_no_batch.mpnn_config import ShapMPNN
 from models.shap_modified_models_no_batch.mpnn_embedder import (
     ShapMoleculeEmbeddingModel,
 )
@@ -96,7 +95,7 @@ class PolymerGNNNoMPNNsSystem(nn.Module):
         )
 
         predictions = self.polymer_fnn(polymer_embedding, polymer_feats, fingerprints)
-
+        print("forward pass happened")
         return predictions
 
 

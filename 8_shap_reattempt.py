@@ -183,146 +183,54 @@ if len(valid_batches) == 0:
     raise ValueError("No valid batches found in val_loader!")
 
 
-def combine_shifted_tensors(tensor_list):
-    if not tensor_list:
-        return torch.tensor([])  # Return empty tensor if list is empty
-
-    combined_tensors = []
-    shift = 0  # Keeps track of the cumulative shift
-
-    for tensor in tensor_list:
-        if tensor.numel() == 0:
-            continue  # Skip empty tensors
-        shifted_tensor = tensor + shift
-        combined_tensors.append(shifted_tensor)
-        shift = shifted_tensor.max().item() + 1  # Update shift for the next tensor
-
-    return torch.cat(combined_tensors, dim=0)
+def generate_polymer_mapping(num_samples):
+    return torch.arange(num_samples).repeat_interleave(2)
 
 
-import torch
+def generate_fully_connected_edge_index(num_nodes):
+    row = torch.arange(num_nodes).repeat(num_nodes)  # Repeat each node N times
+    col = torch.arange(num_nodes).repeat_interleave(
+        num_nodes
+    )  # Expand each node N times
+
+    # Remove self-loops (i.e., where row == col)
+
+    return torch.stack([row, col], dim=0)
 
 
-def combine_shifted_tensors_tuple(tensor_tuple_list):
-    """
-    Combines a list of tuples of tensors while shifting indices properly.
+def generate_edge_attr(perturbed_inputs, edge_index, polymer_rdkit, solvent_rdkit):
+    idx = 0
+    perturbed_polymer_rdkit = perturbed_inputs[:, idx : idx + polymer_rdkit.shape[1]]
+    idx += polymer_rdkit.shape[1]
 
-    Each tuple is treated separately, and shifting is applied using the max index found in any tensor
-    inside that tuple. The final result maintains the tuple structure.
+    perturbed_solvent_rdkit = perturbed_inputs[:, idx : idx + solvent_rdkit.shape[1]]
+    idx += solvent_rdkit.shape[1]
 
-    Args:
-        tensor_tuple_list (list of tuples of torch.Tensor): List of tuples of tensors.
-
-    Returns:
-        tuple of torch.Tensor: Concatenated and shifted tensors, maintaining the tuple structure.
-    """
-    if not tensor_tuple_list:
-        return tuple()  # Return empty tuple if list is empty
-
-    # Initialize lists to store combined tensors per tuple element
-    num_elements = len(tensor_tuple_list[0])  # Get the number of elements per tuple
-    combined_tensors = [[] for _ in range(num_elements)]
-    shifts = [0] * num_elements  # Track shifts per tuple element
-
-    for tensor_tuple in tensor_tuple_list:
-        # Find the max index across all tensors in this tuple to apply a uniform shift
-        max_index = (
-            max(
-                (tensor.max().item() for tensor in tensor_tuple if tensor.numel() > 0),
-                default=-1,
-            )
-            + 1
-        )
-
-        shifted_tuple = []
-        for i, tensor in enumerate(tensor_tuple):
-            if tensor.numel() > 0:
-                shifted_tensor = tensor.clone() + shifts[i]
-                shifted_tuple.append(shifted_tensor)
-                combined_tensors[i].append(shifted_tensor)
-
-        # Update shift for next tuple based on the max index found in this one
-        for i in range(num_elements):
-            shifts[i] += max_index
-
-    # Convert each list to a concatenated tensor
-    final_result = tuple(
-        torch.cat(tensor_list, dim=0) if tensor_list else torch.tensor([])
-        for tensor_list in combined_tensors
+    # Merge polymer and solvent RDKit features
+    rdkit_features = torch.cat(
+        [perturbed_polymer_rdkit, perturbed_solvent_rdkit], dim=0
     )
 
-    return final_result
+    # Extract HDonors (Index 0) and HAcceptors (Index 1) from rdkit_features
+    h_donors = rdkit_features[:, 0]  # HDonors
+    h_acceptors = rdkit_features[:, 1]  # HAcceptors
 
+    num_edges = edge_index.shape[1]
+    edge_attr = torch.zeros((num_edges, 2), dtype=torch.float32)  # Initialize edge_attr
 
-import torch
+    # Iterate over edges to compute edge attributes
+    for k in range(num_edges):
+        i, j = edge_index[:, k]  # Get nodes for this edge
+        edge_attr[k, 1] = max(h_acceptors[i], h_donors[j]) + max(
+            h_donors[i], h_acceptors[j]
+        )
 
-import torch
+    return edge_attr
 
-
-def combine_shifted_2d_tensors(tensor_list):
-    """
-    Combines a list of 2D tensors (each of shape [2, N]) into a single 2D tensor
-    while shifting indices in both rows to avoid collisions.
-
-    The first row represents node indices and is shifted cumulatively.
-    The second row is also shifted using the same offset.
-
-    Args:
-        tensor_list (list of torch.Tensor): List of tensors with shape [2, N].
-
-    Returns:
-        torch.Tensor: Concatenated tensor with indices shifted properly.
-    """
-    if not tensor_list:
-        return torch.tensor(
-            [[], []], dtype=torch.long
-        )  # Return empty tensor if list is empty
-
-    combined_tensors = []
-    shift = 0  # Keeps track of the cumulative shift
-
-    for tensor in tensor_list:
-        if tensor.numel() == 0:
-            continue  # Skip empty tensors
-
-        shifted_tensor = tensor.clone()  # Avoid modifying original tensors
-        shifted_tensor += shift  # Shift both rows by the same amount
-        combined_tensors.append(shifted_tensor)
-
-        shift += tensor.max().item() + 1  # Update shift for the next tensor
-
-    return torch.cat(combined_tensors, dim=1)  # Concatenate along the second dimension
-
-
-# Example
-
-
-def concatenate_tensors(tensor_list):
-    """
-    Concatenates a list of tensors into a single tensor along dim=0.
-
-    Args:
-        tensor_list (list of torch.Tensor): List of tensors to concatenate.
-
-    Returns:
-        torch.Tensor: A single concatenated tensor.
-    """
-    if not tensor_list:
-        return torch.tensor([])  # Return empty tensor if list is empty
-
-    return torch.cat(tensor_list, dim=0)
-
-
-edge_indexes = combine_shifted_2d_tensors(edge_index_list)
-edge_attrs = concatenate_tensors(edge_attr_list)
-polymer_mappings = combine_shifted_tensors(polymer_mapping_list)
 
 polymer_rdkit = torch.stack(polymer_rdkit_list, dim=0)
 solvent_rdkit = torch.stack(solvent_rdkit_list, dim=0)
 
-
-print(edge_index_list)
-print(edge_indexes)
 
 polymer_fingerprint = torch.stack(
     polymer_fingerprint_list, dim=0
@@ -357,9 +265,13 @@ shap_input = shap_input.detach().cpu().numpy()
 
 
 def model_wrapper(perturbed_inputs):
+
     if isinstance(perturbed_inputs, np.ndarray):
         perturbed_inputs = torch.tensor(perturbed_inputs, dtype=torch.float32)
 
+    num_samples = perturbed_inputs.shape[0]  # Number of perturbed input samples
+
+    # ======= Extract Features from Input =======
     idx = 0
     perturbed_polymer_rdkit = perturbed_inputs[:, idx : idx + polymer_rdkit.shape[1]]
     idx += polymer_rdkit.shape[1]
@@ -382,24 +294,35 @@ def model_wrapper(perturbed_inputs):
     perturbed_polymer_feats = perturbed_inputs[:, idx : idx + polymer_feats.shape[1]]
     idx += polymer_feats.shape[1]
 
+    # ======= Construct Dynamic Graph Structures =======
+    polymer_mappings = generate_polymer_mapping(num_samples)  # [0, 0, 1, 1, 2, 2, ...]
+    edge_index = generate_fully_connected_edge_index(
+        num_samples
+    )  # Fully connected graph
+    edge_attr = generate_edge_attr(
+        perturbed_inputs, edge_index, polymer_rdkit, solvent_rdkit
+    )  # Edge attributes
+
+    # ======= Concatenate Inputs for Model =======
     concatenated_rdkit = torch.cat(
         [perturbed_polymer_rdkit, perturbed_solvent_rdkit], dim=0
     )
-    concatinated_fingerprints = torch.cat(
+    concatenated_fingerprints = torch.cat(
         [perturbed_polymer_fingerprint, perturbed_solvent_fingerprint], dim=1
     )
     concatenated_mpnn = torch.cat(
         [perturbed_polymer_mpnn, perturbed_solvent_mpnn], dim=0
     )
 
+    # ======= Pass to Model =======
     model_output = (
         model(
             concatenated_mpnn,
             concatenated_rdkit,
             perturbed_polymer_feats,
-            concatinated_fingerprints,
-            edge_indexes,
-            edge_attrs,
+            concatenated_fingerprints,
+            edge_index,
+            edge_attr,
             polymer_mappings,
         )
         .detach()
@@ -411,7 +334,7 @@ def model_wrapper(perturbed_inputs):
 
 
 explainer = shap.KernelExplainer(model_wrapper, shap.sample(shap_input, 7))
-shap_values = explainer.shap_values(shap_input)
+shap_values = explainer.shap_values(shap_input, n_samples=2048)
 
 shap_values_np = np.array(shap_values)
 polymer_fingerprint_shap = np.mean(shap_values_np[:, 18:2066], axis=1, keepdims=True)

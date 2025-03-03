@@ -1,0 +1,222 @@
+{
+    "0": {
+        "Metrics/MAE/Label_1": 3.111945867538452,
+        "Metrics/MAE/Label_2": 3.235146999359131,
+        "Metrics/MAE/Average": 3.1735464334487915,
+        "Metrics/MAPE/Label_1": 89.90579843521118,
+        "Metrics/MAPE/Label_2": 99.63740706443787,
+        "Metrics/MAPE/Average": 94.77160274982452,
+        "Metrics/RMSE/Label_1": 4.339058297649433,
+        "Metrics/RMSE/Label_2": 4.221383184309325,
+        "Metrics/RMSE/Average": 4.280220740979379
+    },
+    "1": {
+        "Metrics/MAE/Label_1": 3.1842479705810547,
+        "Metrics/MAE/Label_2": 3.203037738800049,
+        "Metrics/MAE/Average": 3.1936428546905518,
+        "Metrics/MAPE/Label_1": 86.3910436630249,
+        "Metrics/MAPE/Label_2": 92.42500066757202,
+        "Metrics/MAPE/Average": 89.40802216529846,
+        "Metrics/RMSE/Label_1": 4.407590405190986,
+        "Metrics/RMSE/Label_2": 4.223590475763246,
+        "Metrics/RMSE/Average": 4.315590440477116
+    },
+    "2": {
+        "Metrics/MAE/Label_1": 2.6786270141601562,
+        "Metrics/MAE/Label_2": 2.5273306369781494,
+        "Metrics/MAE/Average": 2.602978825569153,
+        "Metrics/MAPE/Label_1": 84.81783866882324,
+        "Metrics/MAPE/Label_2": 93.49064826965332,
+        "Metrics/MAPE/Average": 89.15424346923828,
+        "Metrics/RMSE/Label_1": 4.022865269531984,
+        "Metrics/RMSE/Label_2": 3.678294183280462,
+        "Metrics/RMSE/Average": 3.850579726406223
+    },
+    "3": {
+        "Metrics/MAE/Label_1": 2.619932174682617,
+        "Metrics/MAE/Label_2": 2.5299839973449707,
+        "Metrics/MAE/Average": 2.574958086013794,
+        "Metrics/MAPE/Label_1": 86.31073236465454,
+        "Metrics/MAPE/Label_2": 93.98729205131531,
+        "Metrics/MAPE/Average": 90.14901220798492,
+        "Metrics/RMSE/Label_1": 3.8603693495827254,
+        "Metrics/RMSE/Label_2": 3.4219081650611702,
+        "Metrics/RMSE/Average": 3.641138757321948
+    },
+    "4": {
+        "Metrics/MAE/Label_1": 2.4459621906280518,
+        "Metrics/MAE/Label_2": 2.2057719230651855,
+        "Metrics/MAE/Average": 2.3258670568466187,
+        "Metrics/MAPE/Label_1": 80.32000064849854,
+        "Metrics/MAPE/Label_2": 82.01211094856262,
+        "Metrics/MAPE/Average": 81.16605579853058,
+        "Metrics/RMSE/Label_1": 3.4722080349102518,
+        "Metrics/RMSE/Label_2": 3.0190347162091036,
+        "Metrics/RMSE/Average": 3.2456213755596774
+    },
+    "5": {
+        "Metrics/MAE/Label_1": 2.6449227333068848,
+        "Metrics/MAE/Label_2": 2.291334629058838,
+        "Metrics/MAE/Average": 2.4681286811828613,
+        "Metrics/MAPE/Label_1": 81.96182250976562,
+        "Metrics/MAPE/Label_2": 84.64111089706421,
+        "Metrics/MAPE/Average": 83.30146670341492,
+        "Metrics/RMSE/Label_1": 3.6706197987575955,
+        "Metrics/RMSE/Label_2": 3.1752627466773538,
+        "Metrics/RMSE/Average": 3.4229412727174746
+    },
+    "6": {
+        "Metrics/MAE/Label_1": 2.3770132064819336,
+        "Metrics/MAE/Label_2": 2.107253074645996,
+        "Metrics/MAE/Average": 2.242133140563965,
+        "Metrics/MAPE/Label_1": 79.47050333023071,
+        "Metrics/MAPE/Label_2": 82.26866722106934,
+        "Metrics/MAPE/Average": 80.86958527565002,
+        "Metrics/RMSE/Label_1": 3.39563855195707,
+        "Metrics/RMSE/Label_2": 2.856033791136457,
+        "Metrics/RMSE/Average": 3.1258361715467635
+    },
+    "7": {
+        "Metrics/MAE/Label_1": 2.0153510570526123,
+        "Metrics/MAE/Label_2": 1.832245111465454,
+        "Metrics/MAE/Average": 1.9237980842590332,
+        "Metrics/MAPE/Label_1": 68.97963881492615,
+        "Metrics/MAPE/Label_2": 73.61565828323364,
+        "Metrics/MAPE/Average": 71.2976485490799,
+        "Metrics/RMSE/Label_1": 3.164451443349525,
+        "Metrics/RMSE/Label_2": 2.5670499647543696,
+        "Metrics/RMSE/Average": 2.8657507040519477
+    },
+    "8": {
+        "Metrics/MAE/Label_1": 1.9585074186325073,
+        "Metrics/MAE/Label_2": 1.8346619606018066,
+        "Metrics/MAE/Average": 1.896584689617157,
+        "Metrics/MAPE/Label_1": 68.9049780368805,
+        "Metrics/MAPE/Label_2": 79.89951968193054,
+        "Metrics/MAPE/Average": 74.40224885940552,
+        "Metrics/RMSE/Label_1": 3.1022041483440335,
+        "Metrics/RMSE/Label_2": 2.532669987749234,
+        "Metrics/RMSE/Average": 2.8174370680466336
+    },
+    "9": {
+        "Metrics/MAE/Label_1": 1.9831140041351318,
+        "Metrics/MAE/Label_2": 1.6025049686431885,
+        "Metrics/MAE/Average": 1.7928094863891602,
+        "Metrics/MAPE/Label_1": 71.11830115318298,
+        "Metrics/MAPE/Label_2": 71.82177305221558,
+        "Metrics/MAPE/Average": 71.47003710269928,
+        "Metrics/RMSE/Label_1": 2.7920722856536915,
+        "Metrics/RMSE/Label_2": 1.999493355952006,
+        "Metrics/RMSE/Average": 2.395782820802849
+    },
+    "10": {
+        "Metrics/MAE/Label_1": 1.551682472229004,
+        "Metrics/MAE/Label_2": 1.2031705379486084,
+        "Metrics/MAE/Average": 1.3774265050888062,
+        "Metrics/MAPE/Label_1": 53.144264221191406,
+        "Metrics/MAPE/Label_2": 59.594470262527466,
+        "Metrics/MAPE/Average": 56.369367241859436,
+        "Metrics/RMSE/Label_1": 2.4646193316021505,
+        "Metrics/RMSE/Label_2": 1.6686943673565087,
+        "Metrics/RMSE/Average": 2.0666568494793296
+    },
+    "11": {
+        "Metrics/MAE/Label_1": 1.695772409439087,
+        "Metrics/MAE/Label_2": 1.454991102218628,
+        "Metrics/MAE/Average": 1.5753817558288574,
+        "Metrics/MAPE/Label_1": 60.95079183578491,
+        "Metrics/MAPE/Label_2": 64.19117450714111,
+        "Metrics/MAPE/Average": 62.57098317146301,
+        "Metrics/RMSE/Label_1": 2.743343272726131,
+        "Metrics/RMSE/Label_2": 2.135625639824106,
+        "Metrics/RMSE/Average": 2.4394844562751183
+    },
+    "12": {
+        "Metrics/MAE/Label_1": 1.6997976303100586,
+        "Metrics/MAE/Label_2": 1.5132287740707397,
+        "Metrics/MAE/Average": 1.6065132021903992,
+        "Metrics/MAPE/Label_1": 55.94483017921448,
+        "Metrics/MAPE/Label_2": 64.50811624526978,
+        "Metrics/MAPE/Average": 60.22647321224213,
+        "Metrics/RMSE/Label_1": 2.8544594459078447,
+        "Metrics/RMSE/Label_2": 2.2140363671504355,
+        "Metrics/RMSE/Average": 2.5342479065291403
+    },
+    "13": {
+        "Metrics/MAE/Label_1": 1.7729148864746094,
+        "Metrics/MAE/Label_2": 1.4051657915115356,
+        "Metrics/MAE/Average": 1.5890403389930725,
+        "Metrics/MAPE/Label_1": 62.696218490600586,
+        "Metrics/MAPE/Label_2": 66.49104356765747,
+        "Metrics/MAPE/Average": 64.59363102912903,
+        "Metrics/RMSE/Label_1": 2.385463453164407,
+        "Metrics/RMSE/Label_2": 1.7620874936726798,
+        "Metrics/RMSE/Average": 2.0737754734185434
+    },
+    "14": {
+        "Metrics/MAE/Label_1": 1.4562146663665771,
+        "Metrics/MAE/Label_2": 1.0255815982818604,
+        "Metrics/MAE/Average": 1.2408981323242188,
+        "Metrics/MAPE/Label_1": 52.65638828277588,
+        "Metrics/MAPE/Label_2": 52.811795473098755,
+        "Metrics/MAPE/Average": 52.73409187793732,
+        "Metrics/RMSE/Label_1": 2.273617347341581,
+        "Metrics/RMSE/Label_2": 1.3713603833679777,
+        "Metrics/RMSE/Average": 1.8224888653547793
+    },
+    "15": {
+        "Metrics/MAE/Label_1": 1.3419692516326904,
+        "Metrics/MAE/Label_2": 1.0986181497573853,
+        "Metrics/MAE/Average": 1.2202937006950378,
+        "Metrics/MAPE/Label_1": 49.742621183395386,
+        "Metrics/MAPE/Label_2": 46.45929932594299,
+        "Metrics/MAPE/Average": 48.10096025466919,
+        "Metrics/RMSE/Label_1": 2.133712187545402,
+        "Metrics/RMSE/Label_2": 1.5439684755734013,
+        "Metrics/RMSE/Average": 1.8388403315594015
+    },
+    "16": {
+        "Metrics/MAE/Label_1": 1.501442313194275,
+        "Metrics/MAE/Label_2": 1.1383507251739502,
+        "Metrics/MAE/Average": 1.3198965191841125,
+        "Metrics/MAPE/Label_1": 56.12386465072632,
+        "Metrics/MAPE/Label_2": 61.355650424957275,
+        "Metrics/MAPE/Average": 58.7397575378418,
+        "Metrics/RMSE/Label_1": 2.040897873397557,
+        "Metrics/RMSE/Label_2": 1.4461439885460612,
+        "Metrics/RMSE/Average": 1.7435209309718092
+    },
+    "17": {
+        "Metrics/MAE/Label_1": 1.3677384853363037,
+        "Metrics/MAE/Label_2": 1.0049996376037598,
+        "Metrics/MAE/Average": 1.1863690614700317,
+        "Metrics/MAPE/Label_1": 52.73963212966919,
+        "Metrics/MAPE/Label_2": 57.50049352645874,
+        "Metrics/MAPE/Average": 55.120062828063965,
+        "Metrics/RMSE/Label_1": 1.9749101207900512,
+        "Metrics/RMSE/Label_2": 1.2438559693092162,
+        "Metrics/RMSE/Average": 1.6093830450496336
+    },
+    "18": {
+        "Metrics/MAE/Label_1": 1.4495525360107422,
+        "Metrics/MAE/Label_2": 1.2026479244232178,
+        "Metrics/MAE/Average": 1.32610023021698,
+        "Metrics/MAPE/Label_1": 57.13711977005005,
+        "Metrics/MAPE/Label_2": 48.329585790634155,
+        "Metrics/MAPE/Average": 52.7333527803421,
+        "Metrics/RMSE/Label_1": 1.8721863298280357,
+        "Metrics/RMSE/Label_2": 1.531600367107731,
+        "Metrics/RMSE/Average": 1.7018933484678833
+    },
+    "19": {
+        "Metrics/MAE/Label_1": 1.2393157482147217,
+        "Metrics/MAE/Label_2": 1.000693917274475,
+        "Metrics/MAE/Average": 1.1200048327445984,
+        "Metrics/MAPE/Label_1": 50.39665102958679,
+        "Metrics/MAPE/Label_2": 44.67823505401611,
+        "Metrics/MAPE/Average": 47.53744304180145,
+        "Metrics/RMSE/Label_1": 1.9344622270332918,
+        "Metrics/RMSE/Label_2": 1.390031280645875,
+        "Metrics/RMSE/Average": 1.6622467538395833
+    }
+}

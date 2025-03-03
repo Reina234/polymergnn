@@ -1000,3 +1000,104 @@ class PretrainedGNNTrainer(Trainer):
             values_to_transform=preds
         )
         return inv_labels.numpy(), inv_preds.numpy()
+
+
+class MPNNTrainer(Trainer):
+
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        train_dataset: PolymerGNNDataset,
+        val_dataset: Optional[PolymerGNNDataset],
+        hyperparams: dict,
+        log_dir="logs",
+        save_results_dir="results",
+        use_tensorboard=True,
+        track_learning_curve=False,
+        evaluation_metrics: List[str] = None,
+        figure_size=(8, 6),
+        writer: Optional[SummaryWriter] = None,
+        flush_tensorboard_each_epoch: bool = False,
+        close_writer_on_finish: bool = True,
+        additional_info: Optional[Dict[str, str]] = None,
+    ):
+        """
+        Additional arguments:
+         - loss_config: Dictionary for configuring loss weights or other loss-related hyperparameters.
+         - log_transform_helper: An instance of a log transform helper (like LogTransformHelper) that will
+           be used for inverse transforming predictions and labels.
+        """
+
+        self.model = model
+        super().__init__(
+            train_dataset=train_dataset,
+            val_dataset=val_dataset,
+            test_dataset=None,
+            hyperparams=hyperparams,
+            log_dir=log_dir,
+            save_results_dir=save_results_dir,
+            use_tensorboard=use_tensorboard,
+            track_learning_curve=track_learning_curve,
+            evaluation_metrics=evaluation_metrics,
+            figure_size=figure_size,
+            writer=writer,
+            flush_tensorboard_each_epoch=flush_tensorboard_each_epoch,
+            close_writer_on_finish=close_writer_on_finish,
+            additional_info=additional_info,
+        )
+        self.loss_weights = self.hyperparams.get(
+            "weights", torch.tensor([1, 1, 1, 1, 1, 1, 1])
+        )
+        log_selection_tensor = self.hyperparams.get(
+            "log_selection_tensor", torch.tensor([0, 0, 0, 0, 0, 0, 0, 0])
+        )
+        self.log_transform_helper = LogTransformHelper(
+            log_selection_tensor=log_selection_tensor,
+            target_transformers=train_dataset.pipeline_manager.target_pipelines,
+        )
+
+    def configure_model(self) -> torch.nn.Module:
+
+        model = self.model
+        return model
+
+    def compute_loss(
+        self, predictions: torch.Tensor, labels: torch.Tensor
+    ) -> torch.Tensor:
+
+        loss_vect = self.loss_fn(predictions, labels)
+        weighted_loss = loss_vect * self.loss_weights
+        final_loss = torch.mean(weighted_loss)
+        return final_loss
+
+    def forward_pass(self, batch) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Move tensors to device
+        batch = {
+            k: (v.to(self.device) if isinstance(v, torch.Tensor) else v)
+            for k, v in batch.items()
+        }
+
+        predictions = self.model(batch["batch_mol_graph"])
+
+        labels = batch["labels"].to(self.device)
+
+        if torch.isnan(labels).any():
+            logger.error(
+                "NaN detected in labels! Labels: %s for smiles: %s",
+                labels,
+                batch["smiles_list"],
+            )
+        filtered_labels = self.log_transform_helper.filter_target_labels(labels)
+
+        return predictions, filtered_labels
+
+    def inverse_transform(
+        self, labels: np.ndarray, preds: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        inv_labels = self.log_transform_helper.inverse_transform(
+            values_to_transform=labels
+        )
+        inv_preds = self.log_transform_helper.inverse_transform(
+            values_to_transform=preds
+        )
+        return inv_labels.numpy(), inv_preds.numpy()

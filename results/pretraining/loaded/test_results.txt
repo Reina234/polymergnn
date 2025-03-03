@@ -1,0 +1,57 @@
+=== Test Run Summary ===
+class: PretrainedGNNTrainer
+model: PretrainedMPNNGNN
+unused: NoneType
+device: device
+hyperparams: dict
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0005
+weight_decay: 1e-05
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+embedding_dim: 256
+gnn_hidden_dim: 128
+gnn_output_dim: 120
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 50
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.180187
+Metrics/MAE/Label_2: 0.016145
+Metrics/MAE/Label_3: 19.674078
+Metrics/MAE/Label_4: 2.189856
+Metrics/MAE/Label_5: 0.523304
+Metrics/MAE/Label_6: 0.505232
+Metrics/MAE/Average: 3.848133
+Metrics/MAPE/Label_1: 13.758996
+Metrics/MAPE/Label_2: 27.082840
+Metrics/MAPE/Label_3: 68.617916
+Metrics/MAPE/Label_4: 14.774533
+Metrics/MAPE/Label_5: 32.288790
+Metrics/MAPE/Label_6: 42.702845
+Metrics/MAPE/Average: 33.204320
+Metrics/RMSE/Label_1: 0.396064
+Metrics/RMSE/Label_2: 0.028075
+Metrics/RMSE/Label_3: 79.706150
+Metrics/RMSE/Label_4: 3.045233
+Metrics/RMSE/Label_5: 1.220667
+Metrics/RMSE/Label_6: 0.739916
+Metrics/RMSE/Average: 14.189351
+==================================================
+
