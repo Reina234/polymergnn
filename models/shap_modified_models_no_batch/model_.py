@@ -1,26 +1,25 @@
 import torch
 import torch.nn as nn
-from models.molecule_embedding_model import MoleculeEmbeddingModel
-from modules.configured_mpnn import ConfiguredMPNN
-from modules.gat_module import GATModuleMod
-from models.multitask_fnn_varients.morgan_layer import MorganPolymerMultiTaskFNN
+from models.shap_modified_models_no_batch.mpnn_config import ShapMPNN
+from models.shap_modified_models_no_batch.mpnn_embedder import (
+    ShapMoleculeEmbeddingModel,
+)
+from models.shap_modified_models_no_batch.gat import ShapGATModule
 from featurisers.molecule_featuriser import RDKitFeaturizer
-from chemprop.nn import NormAggregation
+from models.shap_modified_models_no_batch.multitask_fnn import (
+    ShapMorganPolymerMultiTaskFNN,
+)
 
 
-class MorganPolymerGNNSystem(nn.Module):
+class PolymerGNNNoMPNNsSystem(nn.Module):
+
     def __init__(
         self,
-        n_bits: int,
-        mpnn_output_dim: int = 300,
-        mpnn_hidden_dim: int = 300,
-        mpnn_depth: int = 3,
-        mpnn_dropout: float = 0.1,
+        mpnn,
+        n_bits: int = 2048,
         rdkit_selection_tensor: torch.Tensor = None,
         molecule_embedding_hidden_dim: int = 512,
         embedding_dim: int = 256,
-        use_rdkit: bool = True,
-        use_chembert: bool = True,
         gnn_hidden_dim: int = 256,
         gnn_output_dim: int = 128,
         gnn_dropout: float = 0.1,
@@ -30,8 +29,6 @@ class MorganPolymerGNNSystem(nn.Module):
         multitask_fnn_dropout: float = 0.1,
     ):
         super().__init__()
-
-        # Select RDKit Features
         rdkit_features = [
             "MolWt",
             "MolLogP",
@@ -42,9 +39,8 @@ class MorganPolymerGNNSystem(nn.Module):
             "FractionCSP3",
         ]
 
-        # Validate rdkit_selection_tensor
         if rdkit_selection_tensor is None:
-            rdkit_selection_tensor = torch.ones(len(rdkit_features))  # Default: Use all
+            rdkit_selection_tensor = torch.ones(len(rdkit_features))
         elif rdkit_selection_tensor.shape[0] != len(rdkit_features):
             raise ValueError(
                 f"rdkit_selection_tensor must have {len(rdkit_features)} elements!"
@@ -56,29 +52,17 @@ class MorganPolymerGNNSystem(nn.Module):
             if select == 1
         ]
 
-        # Initialize MPNN
-        mpnn = ConfiguredMPNN(
-            output_dim=mpnn_output_dim,
-            aggregation_method=NormAggregation(),
-            d_h=mpnn_hidden_dim,
-            depth=mpnn_depth,
-            dropout=mpnn_dropout,
-            undirected=True,
-        )
+        self.mpnn = mpnn
 
-        # Molecule Embedding Model
-        self.molecule_embedding = MoleculeEmbeddingModel(
-            chemprop_mpnn=mpnn,
+        self.molecule_embedding = ShapMoleculeEmbeddingModel(
+            mpnn_output_dim=mpnn.output_dim,
             rdkit_featurizer=RDKitFeaturizer(),
             selected_rdkit_features=selected_rdkit_features,
-            chemberta_dim=600,
             hidden_dim=molecule_embedding_hidden_dim,
             output_dim=embedding_dim,
-            use_rdkit=use_rdkit,
-            use_chembert=use_chembert,
         )
 
-        self.polymer_gnn = GATModuleMod(
+        self.polymer_gnn = ShapGATModule(
             input_dim=embedding_dim,
             hidden_dim=gnn_hidden_dim,
             output_dim=gnn_output_dim,
@@ -86,29 +70,36 @@ class MorganPolymerGNNSystem(nn.Module):
             num_heads=gnn_num_heads,
         )
 
-        self.polymer_fnn = MorganPolymerMultiTaskFNN(
+        self.polymer_fnn = ShapMorganPolymerMultiTaskFNN(
             input_dim=gnn_output_dim + 2,  # +2 for the N and T from polymer feats
-            n_bits=n_bits,
             shared_layer_dim=multitask_fnn_shared_layer_dim,
             hidden_dim=multitask_fnn_hidden_dim,
+            n_bits=n_bits,
             dropout_rate=multitask_fnn_dropout,
         )
 
-    def forward(self, batch, return_intermediates=False):
-        batch["node_features"], mpnn_out, chemberta_emb, rdkit_emb = (
-            self.molecule_embedding(batch)
+    def forward(
+        self,
+        mpnn_out,
+        full_rdkit_tensor,
+        polymer_feats,
+        fingerprints,
+        edge_index,
+        edge_attr,
+        polymer_mapping,
+    ):
+
+        molecule_embedding = self.molecule_embedding(mpnn_out, full_rdkit_tensor)
+
+        polymer_embedding = self.polymer_gnn(
+            molecule_embedding, edge_index, edge_attr, polymer_mapping
         )
 
-        batch["polymer_embedding"] = self.polymer_gnn(batch)
+        predictions = self.polymer_fnn(polymer_embedding, polymer_feats, fingerprints)
 
-        predictions = self.polymer_fnn(batch)
-
-        if return_intermediates:
-            return (
-                predictions,
-                mpnn_out,
-                chemberta_emb,
-                rdkit_emb,
-                batch["polymer_embedding"],
-            )
         return predictions
+
+
+# need to now try shap, load up a pre-loaded mpnn as the starting point to create batch[mpnn_out]
+# then will need to split rdkit tensor, so one from batch, into our individual features, to then reconstruct in perturbation
+# extract the .mpnn after loading the weights/state dict into one of the pretrained one, then reconstruct into wrapper

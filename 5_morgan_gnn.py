@@ -80,7 +80,7 @@ hyperparams = {
     "mpnn_hidden_dim": 96,
     "mpnn_depth": 2,
     "mpnn_dropout": 0.327396910351,
-    "rdkit_selection_tensor": torch.tensor([0, 0, 1, 1, 1, 1, 1]),
+    "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
         [1, 1, 1, 0, 0, 1]
     ),  # Only log-transform 2nd label
@@ -115,4 +115,4 @@ train_loader = DataLoader(
 
 gnn_trainer.run()
 
-torch.save(gnn_trainer.model.state_dict(), "polymergnn_full_mod_morgan.pth")
+torch.save(gnn_trainer.model.state_dict(), "polymergnn_full_mod_morgan2.pth")
