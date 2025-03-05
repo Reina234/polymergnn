@@ -1,12 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Data
-datasets = [
-    "(+) D shared layer",
-    "(+) D shared layer",
-    "(+) Morgan fingerprint\n(-) D shared layer",  # Multi-line label
-]
+plt.rcParams["font.family"] = "Times New Roman"  # Use serif font
+datasets = ["A", "B", "C", "D"]
 methods = ["Rg mean", "Rg SD", "D mean", "SASA mean", "SASA SD", "Re mean", "Average"]
 
 errors = np.array(
@@ -14,8 +10,10 @@ errors = np.array(
         [11, 26, 71, 10, 36, 40, 33],  # Shared layer
         [7.4, 24, 49, 8.6, 32, 43, 27],  # One less shared layer
         [7.8, 28, 38, 9.3, 30, 43, 26],  # Morgan FP, (-) Shared Layer
+        [14, 27, 69, 15, 32, 42, 33],  # fine tuned
     ]
 )
+
 
 # Extract average values separately (last column)
 average_values = errors[:, -1]  # Last column is the average
@@ -25,41 +23,60 @@ methods = methods[:-1]  # Remove "Average" from labels
 # Use a professional style
 plt.style.use("seaborn-v0_8-colorblind")
 
-# Get colors from the style and ensure enough colors
+# Get colors from the main grouped bar plot
 style_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 num_methods = len(methods)
 num_datasets = len(datasets)
 
-# Ensure enough colors for properties and datasets by cycling colors if needed
+# Ensure enough colors for properties (one per property)
 property_colors = [
     style_colors[i % len(style_colors)] for i in range(num_methods)
 ]  # Colors per property
-dataset_colors = [
-    style_colors[i % len(style_colors)] for i in range(num_datasets)
-]  # Colors per dataset
 
-# Generate a figure for each property
+# Create subplots
+fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(4.5, 6), sharey=True)
+axes = axes.flatten()  # Flatten for easy iteration
+
+# Plot each property separately
 for i, method in enumerate(methods):
-    fig, ax = plt.subplots(figsize=(6, 4))
-
-    # Plot bars for each dataset condition
     for j, dataset in enumerate(datasets):
-        ax.bar(
-            dataset,
+        bar = axes[i].bar(
+            j,
             errors[j][i],
-            color=dataset_colors[j],  # Consistent dataset colors
-            edgecolor=property_colors[i],  # Outline color matches main plot
-            linewidth=1.5,
+            color=property_colors[i],
             width=0.5,
+            alpha=0.8,
+            label=dataset,
         )
 
-    # Formatting
-    ax.set_ylabel("sMAPE (%)", fontsize=12)
-    ax.set_xlabel("Dataset Condition", fontsize=12)
-    ax.set_title(f"sMAPE for {method}", fontsize=14, fontweight="bold")
-    ax.set_xticklabels(datasets, fontsize=10, rotation=0, ha="center")
+        # Annotate value on top of the bar
+        for rect in bar:
+            height = rect.get_height()
+            axes[i].text(
+                rect.get_x() + rect.get_width() / 2,
+                height + 2,  # Adjust position above the bar
+                f"{height:.1f}",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+                fontweight="bold",
+            )
 
-    # Save each figure
-    plt.tight_layout()
-    plt.savefig(f"sMAPE_{method.replace(' ', '_')}.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    axes[i].set_title(method, fontsize=10, fontweight="bold")
+    axes[i].set_xticks(range(len(datasets)))
+    if i >= (3 - 1) * 2:  # Last row condition
+        axes[i].set_xticklabels(datasets, fontsize=8, rotation=0)
+    else:
+        axes[i].set_xticklabels([])
+    axes[i].set_ylim(0, 100)
+    if i % 2 == 0:
+        axes[i].set_ylabel(
+            "sMAPE (%)", fontsize=10, fontweight="bold"
+        )  # Removes text but keeps ticks
+# General formatting
+fig.suptitle("sMAPE Across Properties", fontsize=14, fontweight="bold")
+fig.tight_layout()  # Automatically optimizes layout
+fig.subplots_adjust(hspace=0.3, wspace=0.2)  # Adjust vertical and horizontal spacing
+
+fig.savefig("subplots_sMAPE.png", dpi=300, bbox_inches="tight")
+plt.show()

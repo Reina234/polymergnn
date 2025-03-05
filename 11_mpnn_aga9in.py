@@ -11,9 +11,20 @@ from modules.configured_mpnn import ConfiguredMPNN
 from tools.transform_pipeline_manager import TransformPipelineManager
 from sklearn.preprocessing import StandardScaler
 from tools.mol_to_molgraph import FGMembershipMol2MolGraph
-from training.refactored_batched_dataset import PolymerGNNDataset
-from tools.smiles_transformers import NoSmilesTransform
 from training.refactored_trainer import MPNNTrainer
+import torch
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from modules.configured_mpnn import ConfiguredMPNN
+from featurisers.molecule_featuriser import RDKitFeaturizer
+from chemprop.nn import NormAggregation
+from models.molecule_embedding_model import MoleculeEmbeddingModel
+from tools.transform_pipeline_manager import TransformPipelineManager
+from sklearn.preprocessing import StandardScaler
+from tools.mol_to_molgraph import FGMembershipMol2MolGraph
+from training.refactored_trainer import PretrainedGNNTrainer
+from training.refactored_batched_dataset import PolymerMorganGNNDataset
+from tools.smiles_transformers import PolymerisationSmilesTransform
 
 
 class ConfigMPNN(nn.Module):
@@ -70,54 +81,47 @@ class ConfigMPNN(nn.Module):
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-target_columns = [1, 2]
-monomer_smiles_column = 0
-feature_columns = None
 
-df = pd.read_csv("tests/freesolv/FreeSolv_SAMPL.csv")
-df = df.drop(df.columns[[0, 1]], axis=1)
 
-pipeline_manager = TransformPipelineManager(
-    feature_columns, target_columns, log_transform_targets=False
-)
+df = pd.read_csv("tests/output_2_4_2.csv")
+
+feature_columns = [4, 5]
+target_columns = [6, 7, 8, 9, 10, 11]
+monomer_smiles_column = 3
+solvent_smiles_column = 1
+
+pipeline_manager = TransformPipelineManager(feature_columns, target_columns)
+
 pipeline_manager.set_feature_pipeline(StandardScaler())
 pipeline_manager.set_target_pipeline(StandardScaler())
 
-train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
-val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
 
-train_dataset = PolymerGNNDataset(
+train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
+
+
+n_bits = 2048
+
+train_dataset = PolymerMorganGNNDataset(
     data=train_df,
+    n_bits=n_bits,
     pipeline_manager=pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,
-    solvent_smiles_column=None,
-    monomer_smiles_transformer=NoSmilesTransform(),
+    solvent_smiles_column=solvent_smiles_column,
+    monomer_smiles_transformer=PolymerisationSmilesTransform(),
     mol_to_molgraph=FGMembershipMol2MolGraph(),
     target_columns=target_columns,
     feature_columns=feature_columns,
     is_train=True,
 )
-
 fitted_pipeline_manager = train_dataset.pipeline_manager
 
-val_dataset = PolymerGNNDataset(
+val_dataset = PolymerMorganGNNDataset(
     data=val_df,
+    n_bits=n_bits,
     pipeline_manager=fitted_pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,
-    solvent_smiles_column=None,
-    monomer_smiles_transformer=NoSmilesTransform(),
-    mol_to_molgraph=FGMembershipMol2MolGraph(),
-    target_columns=target_columns,
-    feature_columns=feature_columns,
-    is_train=False,
-)
-
-test_dataset = PolymerGNNDataset(
-    data=test_df,
-    pipeline_manager=fitted_pipeline_manager,
-    monomer_smiles_column=monomer_smiles_column,
-    solvent_smiles_column=None,
-    monomer_smiles_transformer=NoSmilesTransform(),
+    solvent_smiles_column=solvent_smiles_column,
+    monomer_smiles_transformer=PolymerisationSmilesTransform(),
     mol_to_molgraph=FGMembershipMol2MolGraph(),
     target_columns=target_columns,
     feature_columns=feature_columns,
@@ -164,7 +168,7 @@ idx = train_dataset[0]
 batch_mol = idx[1][0]
 print(batch_mol)
 mpnn = ConfiguredMPNN(
-    output_dim=2,
+    output_dim=7,
     aggregation_method=NormAggregation(),
     d_h=mpnn_hidden_dim,
     depth=mpnn_depth,
@@ -178,7 +182,7 @@ hyperparams = {
     "batch_size": 32,
     "lr": 5e-4,
     "weight_decay": 1e-5,
-    "log_selection_tensor": torch.tensor([0, 0]),
+    "log_selection_tensor": torch.tensor([1, 1, 1, 0, 0, 1]),
     "epochs": 20,
 }
 trainer = MPNNTrainer(
@@ -194,4 +198,4 @@ trainer = MPNNTrainer(
 trainer.train(20)
 
 
-torch.save(mpnn.state_dict(), "mpnn_pure.pth")
+# torch.save(mpnn.state_dict(), "mpnn_pure.pth")

@@ -16,11 +16,11 @@ from tools.smiles_transformers import NoSmilesTransform
 from training.refactored_trainer import PretrainingTrainer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-target_columns = [1]
-monomer_smiles_column = 2
+target_columns = [1, 2]
+monomer_smiles_column = 0
 feature_columns = None
 
-
+# Load dataset
 df = pd.read_csv("tests/Lipophilicity.csv")
 # df = pd.read_csv("tests/freesolv/FreeSolv_SAMPL.csv")
 # df = df.drop(df.columns[[0, 1]], axis=1)
@@ -75,8 +75,8 @@ test_dataset = PolymerGNNDataset(
 
 rdkit_selection_tensor = torch.tensor([0, 0, 1, 1, 1, 1, 1])
 mpnn_output_dim = 256
-mpnn_hidden_dim = 500
-mpnn_depth = 4
+mpnn_hidden_dim = 256
+mpnn_depth = 3
 mpnn_dropout = 0.1
 molecule_embedding_hidden_dim = 256
 embedding_dim = 256
@@ -138,7 +138,7 @@ hyperparams = {
     "batch_size": 32,
     "lr": 5e-4,
     "weight_decay": 1e-5,
-    "log_selection_tensor": torch.tensor([0]),
+    "log_selection_tensor": torch.tensor([0, 0]),
     "epochs": 20,
 }
 

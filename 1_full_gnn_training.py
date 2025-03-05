@@ -92,7 +92,7 @@ hyperparams = {
     "multitask_fnn_hidden_dim": 96,
     "multitask_fnn_shared_layer_dim": 128,
     "multitask_fnn_dropout": 0.1,
-    "epochs": 60,
+    "epochs": 20,
     "weights": torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0]),
 }
 
