@@ -4,7 +4,7 @@ from typing import List, Optional, Any
 from chemprop.data import BatchMolGraph
 from chemprop.nn import BondMessagePassing
 from tools.utils import nt_xent_loss
-from modules.hierarchical_base import HierarchicalFGModel
+from models.modules.hierarchical_base import HierarchicalFGModel
 from config.data_models import IFG
 
 

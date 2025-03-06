@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from typing import List, Optional
-from modules.configured_mpnn import ConfiguredMPNN
+from models.modules.configured_mpnn import ConfiguredMPNN
 from featurisers.molecule_featuriser import RDKitFeaturizer
 
 

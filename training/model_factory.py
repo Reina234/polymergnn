@@ -1,7 +1,7 @@
 import torch
 from abc import ABC, abstractmethod
 from typing import Any, Dict
-from modules.configured_mpnn import ConfiguredMPNN
+from models.modules.configured_mpnn import ConfiguredMPNN
 from models.molecule_embedding_model import MoleculeEmbeddingModel
 from featurisers.molecule_featuriser import RDKitFeaturizer
 from models.molecule_prediction_model import (

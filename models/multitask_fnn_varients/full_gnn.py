@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 from models.molecule_embedding_model import MoleculeEmbeddingModel
-from modules.configured_mpnn import ConfiguredMPNN
-from modules.gat_module import GATModuleMod
+from models.modules.configured_mpnn import ConfiguredMPNN
+from models.modules.gat_module import GATModuleMod
 from models.multitask_fnn_varients.morgan_layer import MorganPolymerMultiTaskFNN
 from featurisers.molecule_featuriser import RDKitFeaturizer
 from chemprop.nn import NormAggregation

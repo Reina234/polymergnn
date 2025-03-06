@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from models.molecule_embedding_model import MoleculeEmbeddingModel
-from modules.gat_module import GATModuleMod
+from models.modules.gat_module import GATModuleMod
 from models.poly_multitask_fnn import PolymerMultiTaskFNN
 
 
