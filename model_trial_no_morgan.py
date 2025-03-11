@@ -17,7 +17,7 @@ feature_columns = [0, 5, 6]
 monomer_smiles_column = 4
 solvent_smiles_column = 2
 
-df = pd.read_csv("data/output_2_4_2_with_density.csv")
+df = pd.read_csv("data/output_3_11_with_density.csv")
 
 
 pipeline_manager = TransformPipelineManager(
@@ -116,4 +116,4 @@ train_loader = DataLoader(
 gnn_trainer.run()
 
 
-# torch.save(gnn_trainer.model.state_dict(), "polymergnn_full_mod_gat.pth")
+torch.save(gnn_trainer.model.state_dict(), "polymergnn_full_mod_gat.pth")

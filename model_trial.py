@@ -2,7 +2,7 @@
 
 import torch
 from tools.transform_pipeline_manager import TransformPipelineManager
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from sklearn.model_selection import train_test_split
@@ -19,7 +19,7 @@ solvent_smiles_column = 2
 
 n_bits = 2048
 
-df = pd.read_csv("data/output_2_4_2_with_density.csv")
+df = pd.read_csv("data/output_3_11_with_density.csv")
 
 
 pipeline_manager = TransformPipelineManager(
@@ -27,8 +27,8 @@ pipeline_manager = TransformPipelineManager(
 )
 
 
-pipeline_manager.set_feature_pipeline(StandardScaler())
-pipeline_manager.set_target_pipeline(StandardScaler())
+pipeline_manager.set_feature_pipeline(MinMaxScaler())
+pipeline_manager.set_target_pipeline(MinMaxScaler())
 
 
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -78,14 +78,14 @@ test_dataset = PolymerMorganGNNDataset(
 
 hyperparams = {
     "batch_size": 32,
-    "lr": 0.0025,
-    "weight_decay": 1e-6,
+    "lr": 0.001,
+    "weight_decay": 1e-5,
     "log_diffusion_factor": 5.0,  # Tune scaling
     "log_rg_factor": 3.0,
     "mpnn_output_dim": 128,
-    "mpnn_hidden_dim": 96,
-    "mpnn_depth": 2,
-    "mpnn_dropout": 0.327396910351,
+    "mpnn_hidden_dim": 128,
+    "mpnn_depth": 3,
+    "mpnn_dropout": 0.2,
     "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
         [1, 1, 1, 0, 0, 1]
@@ -97,11 +97,11 @@ hyperparams = {
     "gnn_hidden_dim": 128,
     "gnn_output_dim": 64,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 4,
+    "gnn_num_heads": 6,
     "multitask_fnn_hidden_dim": 96,
     "multitask_fnn_shared_layer_dim": 128,
     "multitask_fnn_dropout": 0.1,
-    "epochs": 50,
+    "epochs": 80,
     "weights": torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0]),
 }
 
@@ -122,4 +122,4 @@ train_loader = DataLoader(
 gnn_trainer.run()
 
 
-# torch.save(gnn_trainer.model.state_dict(), "polymergnn_full_mod_gat.pth")
+torch.save(gnn_trainer.model.state_dict(), "polymergnn_full_morgan_gat_min_max.pth")

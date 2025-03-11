@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from models.molecule_embedding_model import MoleculeEmbeddingModel
 from models.modules.configured_mpnn import ConfiguredMPNN
-from models.temperature_aware_gnn.no_t_no_morgan_fnn import (
+from models.temperature_aware_gnn.no_morgan_fnn import (
     DensityNoSharedLayerPolymerMultiTaskFNN,
 )
 from models.temperature_aware_gnn.gat_with_node_features import GATModuleNT
