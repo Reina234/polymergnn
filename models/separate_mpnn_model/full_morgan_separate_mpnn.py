@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 from models.separate_mpnn_model.mol_embedding_model import RevisedMoleculeEmbeddingModel
-from models.modules.configured_mpnn import ConfiguredMPNN
-
+from models.separate_mpnn_model.modified_configured_mpnn import AttentiveConfiguredMPNN
 from models.temperature_aware_gnn.morgan_no_T import MorganPolymerMultiTaskFNNNoT
 from models.temperature_aware_gnn.gat_with_node_features import GATModuleNT
 from featurisers.molecule_featuriser import RDKitFeaturizer
-from chemprop.nn import NormAggregation
+
+# from models.separate_mpnn_model.modified_gat import DensityOnlyGATModuleNT
 
 
 class MorganSeparatedGNNSystem(nn.Module):
@@ -56,9 +56,8 @@ class MorganSeparatedGNNSystem(nn.Module):
             if select == 1
         ]
 
-        mpnn = ConfiguredMPNN(
+        mpnn = AttentiveConfiguredMPNN(
             output_dim=mpnn_output_dim,
-            aggregation_method=NormAggregation(),
             d_h=mpnn_hidden_dim,
             depth=mpnn_depth,
             dropout=mpnn_dropout,

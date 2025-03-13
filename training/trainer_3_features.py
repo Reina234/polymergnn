@@ -415,6 +415,42 @@ class SeparatedGNNTrainer(Trainer):
             target_transformers=train_dataset.pipeline_manager.target_pipelines,
         )
 
+    def infer(self, loader: torch.utils.data.DataLoader) -> np.ndarray:
+        """
+        Runs inference on a given DataLoader and returns predictions.
+
+        Args:
+            loader (torch.utils.data.DataLoader): The DataLoader for inference data.
+
+        Returns:
+            np.ndarray: Inverse-transformed predictions.
+        """
+        self.model.eval()
+        all_preds = []
+
+        with torch.no_grad():
+            for batch in loader:
+                batch = {
+                    k: v.to(self.device) if isinstance(v, torch.Tensor) else v
+                    for k, v in batch.items()
+                }
+
+                # Get predictions
+                predictions = self.model(batch)  # Shape: (N, num_outputs)
+
+                all_preds.append(predictions.cpu().numpy())
+
+        all_preds_numpy = [pred for pred in all_preds if pred.shape[0] > 0]
+
+        # Concatenate along the first axis (axis=0) to stack batches into (T, 6)
+        preds_numpy = np.concatenate(all_preds_numpy, axis=0)
+
+        inv_preds = self.log_transform_helper.inverse_transform(
+            values_to_transform=preds_numpy
+        )
+
+        return inv_preds
+
     def configure_model(self) -> torch.nn.Module:
         mpnn_output_dim = self.hyperparams.get("mpnn_output_dim", 300)
         mpnn_hidden_dim = self.hyperparams.get("mpnn_hidden_dim", 300)

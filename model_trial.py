@@ -20,8 +20,6 @@ solvent_smiles_column = 2
 n_bits = 2048
 
 df = pd.read_csv("data/output_3_11_with_density.csv")
-
-
 pipeline_manager = TransformPipelineManager(
     feature_indexes=feature_columns, target_indexes=target_columns
 )

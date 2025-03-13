@@ -1,13 +1,10 @@
 import torch
 import torch.nn as nn
 from models.separate_mpnn_model.mol_embedding_model import RevisedMoleculeEmbeddingModel
-from models.modules.configured_mpnn import ConfiguredMPNN
-from models.temperature_aware_gnn.no_morgan_fnn import (
-    DensityNoSharedLayerPolymerMultiTaskFNN,
-)
-from models.temperature_aware_gnn.gat_with_node_features import GATModuleNT
+from models.separate_mpnn_model.modified_configured_mpnn import AttentiveConfiguredMPNN
+from models.separate_mpnn_model.modified_fnn import MoreLayerMultiTaskFNN
+from models.separate_mpnn_model.modified_gat import DensityOnlyGATModuleNT
 from featurisers.molecule_featuriser import RDKitFeaturizer
-from chemprop.nn import NormAggregation
 
 
 class SeparatedGNNSystem(nn.Module):
@@ -56,9 +53,8 @@ class SeparatedGNNSystem(nn.Module):
             if select == 1
         ]
 
-        mpnn = ConfiguredMPNN(
+        mpnn = AttentiveConfiguredMPNN(
             output_dim=mpnn_output_dim,
-            aggregation_method=NormAggregation(),
             d_h=mpnn_hidden_dim,
             depth=mpnn_depth,
             dropout=mpnn_dropout,
@@ -86,7 +82,7 @@ class SeparatedGNNSystem(nn.Module):
             use_chembert=use_chembert,
         )
 
-        self.polymer_gnn = GATModuleNT(
+        self.polymer_gnn = DensityOnlyGATModuleNT(
             input_dim=embedding_dim,
             hidden_dim=gnn_hidden_dim,
             output_dim=gnn_output_dim,
@@ -94,7 +90,7 @@ class SeparatedGNNSystem(nn.Module):
             num_heads=gnn_num_heads,
         )
 
-        self.polymer_fnn = DensityNoSharedLayerPolymerMultiTaskFNN(
+        self.polymer_fnn = MoreLayerMultiTaskFNN(
             input_dim=gnn_output_dim,
             shared_layer_dim=multitask_fnn_shared_layer_dim,
             hidden_dim=multitask_fnn_hidden_dim,

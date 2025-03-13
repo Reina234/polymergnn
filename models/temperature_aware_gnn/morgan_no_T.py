@@ -27,6 +27,9 @@ class MorganPolymerMultiTaskFNNNoT(nn.Module):
             nn.Linear(input_dim_fnn, shared_layer_dim),
             nn.SiLU(),
             nn.Dropout(dropout_rate),
+            nn.Linear(shared_layer_dim, shared_layer_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout_rate),
         )
         # Heads for individual property predictions
         self.sasa_head = nn.Sequential(

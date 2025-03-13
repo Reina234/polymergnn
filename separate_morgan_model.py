@@ -95,12 +95,12 @@ hyperparams = {
     "gnn_hidden_dim": 128,
     "gnn_output_dim": 64,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 6,
-    "multitask_fnn_hidden_dim": 96,
-    "multitask_fnn_shared_layer_dim": 128,
+    "gnn_num_heads": 5,
+    "multitask_fnn_hidden_dim": 256,
+    "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
     "epochs": 80,
-    "weights": torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0]),
+    "weights": torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 2.0]),
 }
 
 gnn_trainer = SeparateMorganPolymerGNNTrainer(

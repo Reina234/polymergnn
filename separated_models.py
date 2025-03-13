@@ -2,7 +2,7 @@
 
 import torch
 from tools.transform_pipeline_manager import TransformPipelineManager
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import RobustScaler
 import pandas as pd
 from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from sklearn.model_selection import train_test_split
@@ -25,8 +25,8 @@ pipeline_manager = TransformPipelineManager(
 )
 
 
-pipeline_manager.set_feature_pipeline(MinMaxScaler())
-pipeline_manager.set_target_pipeline(MinMaxScaler())
+pipeline_manager.set_feature_pipeline(RobustScaler())
+pipeline_manager.set_target_pipeline(RobustScaler())
 
 
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -75,8 +75,6 @@ hyperparams = {
     "batch_size": 32,
     "lr": 0.001,
     "weight_decay": 1e-5,
-    "log_diffusion_factor": 5.0,  # Tune scaling
-    "log_rg_factor": 3.0,
     "mpnn_output_dim": 128,
     "mpnn_hidden_dim": 128,
     "mpnn_depth": 3,
@@ -86,18 +84,18 @@ hyperparams = {
         [1, 1, 1, 0, 0, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 192,
-    "embedding_dim": 100,
+    "embedding_dim": 80,
     "use_rdkit": True,
     "use_chembert": False,
     "gnn_hidden_dim": 128,
     "gnn_output_dim": 64,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 6,
-    "multitask_fnn_hidden_dim": 96,
-    "multitask_fnn_shared_layer_dim": 128,
+    "gnn_num_heads": 5,
+    "multitask_fnn_hidden_dim": 128,
+    "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
-    "epochs": 80,
-    "weights": torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0]),
+    "epochs": 100,
+    "weights": torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0]),
 }
 
 gnn_trainer = SeparatedGNNTrainer(
