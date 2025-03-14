@@ -7,23 +7,17 @@ from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from tools.smiles_transformers import PolymerisationSmilesTransform
 from training.refactored_batched_dataset import PolymerSeparatedDataset
 from training.trainer_3_features import SeparatedGNNTrainer
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import RobustScaler
 from training.no_fitting_dataset import NoFitPolymerSeparatedDataset
-import torch
-from tools.transform_pipeline_manager import TransformPipelineManager
-from sklearn.preprocessing import MinMaxScaler
-import pandas as pd
-from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from sklearn.model_selection import train_test_split
-from training.refactored_batched_dataset import PolymerSeparatedDataset
-from tools.smiles_transformers import PolymerisationSmilesTransform
-from torch.utils.data import DataLoader
-from training.trainer_3_features import SeparatedGNNTrainer
+
 
 # Define file paths
 model_path = "march_11_model_no_re_sd.pth"
-input_csv = "additional_data.csv"
-output_csv = "solvent_polymer_predictions.csv"
+input_csv = (
+    "/Users/reinazheng/Desktop/polymergnn/solvation_prediction/additional_data.csv"
+)
+output_csv = "solvent_polymer_predictions2.csv"
 
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -56,8 +50,6 @@ hyperparams = {
     "batch_size": 32,
     "lr": 0.001,
     "weight_decay": 1e-5,
-    "log_diffusion_factor": 5.0,  # Tune scaling
-    "log_rg_factor": 3.0,
     "mpnn_output_dim": 128,
     "mpnn_hidden_dim": 128,
     "mpnn_depth": 3,
@@ -67,18 +59,18 @@ hyperparams = {
         [1, 1, 1, 0, 0, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 192,
-    "embedding_dim": 100,
+    "embedding_dim": 80,
     "use_rdkit": True,
     "use_chembert": False,
     "gnn_hidden_dim": 128,
     "gnn_output_dim": 64,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 6,
-    "multitask_fnn_hidden_dim": 96,
-    "multitask_fnn_shared_layer_dim": 128,
+    "gnn_num_heads": 5,
+    "multitask_fnn_hidden_dim": 128,
+    "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
-    "epochs": 80,
-    "weights": torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0]),
+    "epochs": 100,
+    "weights": torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0]),
 }
 target_columns = [7, 8, 9, 10, 11, 12]
 feature_columns = [0, 5, 6]
@@ -93,8 +85,8 @@ pipeline_manager = TransformPipelineManager(
 )
 
 
-pipeline_manager.set_feature_pipeline(MinMaxScaler())
-pipeline_manager.set_target_pipeline(MinMaxScaler())
+pipeline_manager.set_feature_pipeline(RobustScaler())
+pipeline_manager.set_target_pipeline(RobustScaler())
 
 
 train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -175,54 +167,6 @@ with torch.no_grad():
         solvent_rdkit_list.append(batch_device["solvent_rdkit_tensor"].cpu().numpy())
 
 # Concatenate RDKit features
-monomer_rdkit_numpy = np.vstack(monomer_rdkit_list)
-solvent_rdkit_numpy = np.vstack(solvent_rdkit_list)
-
-# Add predictions to DataFrame
-solvation_df["Rg_mean"] = preds_numpy[:, 0]
-solvation_df["Rg_SD"] = preds_numpy[:, 1]
-solvation_df["SASA_mean"] = preds_numpy[:, 2]
-solvation_df["SASA_SD"] = preds_numpy[:, 3]
-solvation_df["D_mean"] = preds_numpy[:, 4]
-solvation_df["Re_mean"] = preds_numpy[:, 5]
-
-# Add RDKit features with clear headers
-for i, header in enumerate(rdkit_headers):
-    solvation_df[f"monomer_{header}"] = monomer_rdkit_numpy[:, i]
-for i, header in enumerate(rdkit_headers):
-    solvation_df[f"solvent_{header}"] = solvent_rdkit_numpy[:, i]
-
-# Save updated CSV
-solvation_df.to_csv(output_csv, index=False)
-
-print(f"Predictions with RDKit features saved to: {output_csv}")
-
-raise ValueError
-# RDKit headers
-
-
-# Run inference
-predictions_list = []
-monomer_rdkit_list = []
-solvent_rdkit_list = []
-
-with torch.no_grad():
-    for batch in inference_loader:
-        batch_device = {
-            k: v.to(device) if isinstance(v, torch.Tensor) else v
-            for k, v in batch.items()
-        }
-
-        # Model predictions
-        predictions = gnn_trainer.model(batch_device).cpu().numpy()
-        predictions_list.append(predictions)
-
-        # Collect RDKit features
-        monomer_rdkit_list.append(batch_device["monomer_rdkit_tensor"].cpu().numpy())
-        solvent_rdkit_list.append(batch_device["solvent_rdkit_tensor"].cpu().numpy())
-
-# Concatenate predictions and RDKit features
-preds_numpy = np.concatenate(predictions_list, axis=0)
 monomer_rdkit_numpy = np.vstack(monomer_rdkit_list)
 solvent_rdkit_numpy = np.vstack(solvent_rdkit_list)
 

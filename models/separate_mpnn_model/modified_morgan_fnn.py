@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-class MorganPolymerMultiTaskFNNNoT(nn.Module):
+class ModifiedMorganPolymerMultiTaskFNNNoT(nn.Module):
     def __init__(
         self,
         input_dim: int,  # Polymer embedding + N, T

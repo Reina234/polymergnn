@@ -2,7 +2,7 @@
 
 import torch
 from tools.transform_pipeline_manager import TransformPipelineManager
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import StandardScaler
 import pandas as pd
 from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from sklearn.model_selection import train_test_split
@@ -25,8 +25,8 @@ pipeline_manager = TransformPipelineManager(
 )
 
 
-pipeline_manager.set_feature_pipeline(RobustScaler())
-pipeline_manager.set_target_pipeline(RobustScaler())
+pipeline_manager.set_feature_pipeline(StandardScaler())
+pipeline_manager.set_target_pipeline(StandardScaler())
 
 
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -75,27 +75,27 @@ hyperparams = {
     "batch_size": 32,
     "lr": 0.001,
     "weight_decay": 1e-5,
-    "mpnn_output_dim": 128,
+    "mpnn_output_dim": 96,
     "mpnn_hidden_dim": 128,
-    "mpnn_depth": 3,
+    "mpnn_depth": 23,
     "mpnn_dropout": 0.1,
     "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
         [1, 1, 1, 0, 0, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 192,
-    "embedding_dim": 80,
+    "embedding_dim": 100,
     "use_rdkit": True,
     "use_chembert": False,
     "gnn_hidden_dim": 128,
     "gnn_output_dim": 64,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 5,
+    "gnn_num_heads": 4,
     "multitask_fnn_hidden_dim": 128,
     "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
     "epochs": 100,
-    "weights": torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0]),
+    "weights": torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0]),
 }
 
 gnn_trainer = SeparatedGNNTrainer(
@@ -114,4 +114,4 @@ train_loader = DataLoader(
 gnn_trainer.run()
 
 
-torch.save(gnn_trainer.model.state_dict(), "march_11_model_no_re_sd.pth")
+torch.save(gnn_trainer.model.state_dict(), "march_11_model_no_re_sd_no_seq.pth")

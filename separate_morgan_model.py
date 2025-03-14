@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from sklearn.model_selection import train_test_split
-from training.refactored_batched_dataset import PolymerSeparatedDataset
+from training.refactored_batched_dataset import PolymerMorganSeparatedDataset
 from tools.smiles_transformers import PolymerisationSmilesTransform
 from torch.utils.data import DataLoader
 from training.trainer_3_features import SeparateMorganPolymerGNNTrainer
@@ -36,7 +36,7 @@ train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
 val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
 
 
-train_dataset = PolymerSeparatedDataset(
+train_dataset = PolymerMorganSeparatedDataset(
     data=train_df,
     pipeline_manager=pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,
@@ -49,7 +49,7 @@ train_dataset = PolymerSeparatedDataset(
 )
 fitted_pipeline_manager = train_dataset.pipeline_manager
 
-val_dataset = PolymerSeparatedDataset(
+val_dataset = PolymerMorganSeparatedDataset(
     data=val_df,
     pipeline_manager=fitted_pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,
@@ -61,7 +61,7 @@ val_dataset = PolymerSeparatedDataset(
     is_train=False,
 )
 
-test_dataset = PolymerSeparatedDataset(
+test_dataset = PolymerMorganSeparatedDataset(
     data=test_df,
     pipeline_manager=fitted_pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,

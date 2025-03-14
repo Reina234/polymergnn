@@ -2,8 +2,10 @@ import torch
 import torch.nn as nn
 from models.separate_mpnn_model.mol_embedding_model import RevisedMoleculeEmbeddingModel
 from models.separate_mpnn_model.modified_configured_mpnn import AttentiveConfiguredMPNN
-from models.temperature_aware_gnn.morgan_no_T import MorganPolymerMultiTaskFNNNoT
-from models.temperature_aware_gnn.gat_with_node_features import GATModuleNT
+from models.separate_mpnn_model.modified_morgan_fnn import (
+    ModifiedMorganPolymerMultiTaskFNNNoT,
+)
+from models.separate_mpnn_model.modified_gat import DensityOnlyGATModuleNT
 from featurisers.molecule_featuriser import RDKitFeaturizer
 
 # from models.separate_mpnn_model.modified_gat import DensityOnlyGATModuleNT
@@ -85,7 +87,7 @@ class MorganSeparatedGNNSystem(nn.Module):
             use_chembert=use_chembert,
         )
 
-        self.polymer_gnn = GATModuleNT(
+        self.polymer_gnn = DensityOnlyGATModuleNT(
             input_dim=embedding_dim,
             hidden_dim=gnn_hidden_dim,
             output_dim=gnn_output_dim,
@@ -93,7 +95,7 @@ class MorganSeparatedGNNSystem(nn.Module):
             num_heads=gnn_num_heads,
         )
 
-        self.polymer_fnn = MorganPolymerMultiTaskFNNNoT(
+        self.polymer_fnn = ModifiedMorganPolymerMultiTaskFNNNoT(
             input_dim=gnn_output_dim,  # +1 not +2 because removed N from the features (only using T now)
             n_bits=n_bits,
             shared_layer_dim=multitask_fnn_shared_layer_dim,
