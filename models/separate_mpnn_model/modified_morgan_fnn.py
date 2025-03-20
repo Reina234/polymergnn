@@ -75,7 +75,7 @@ class ModifiedMorganPolymerMultiTaskFNNNoT(nn.Module):
         polymer_feats = batch["polymer_feats"][:, 0:3]  # [B, 2] (D (?), N, T)
         scaling_factors = torch.tensor([1, 10.0, 100.0], device=polymer_feats.device)
         normalized_feats = polymer_feats / scaling_factors
-        combined_input = torch.cat([polymer_embedding, normalized_feats], dim=-1)
+
         combined_input = torch.cat([polymer_embedding, normalized_feats], dim=-1)
         shared_repr = self.shared_layer(combined_input)
 

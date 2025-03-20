@@ -819,6 +819,7 @@ class PolymerSeparatedDataset(PolymerDataset):
         }
 
 
+# should have made a base class here for morgan really, but no time at the moment
 class PolymerMorganSeparatedDataset(PolymerDataset):
     def __init__(
         self,
@@ -832,11 +833,15 @@ class PolymerMorganSeparatedDataset(PolymerDataset):
         feature_columns: Optional[List[int]] = None,
         target_columns: Optional[List[int]] = None,
         is_train: bool = False,
+        radius: int = 2,
+        n_bits: int = 2048,
     ):
+        self.n_bits = n_bits
         self.edge_index_creator = BondHBondEdgeCreator()
         self.chemberta_embedder = ChemBERTaEmbedder()
         self.rdkit_featuriser = RDKitFeaturizer()
         self.rdkit_featuriser = RDKitFeaturizer()
+        self.morgan_generator = GetMorganGenerator(radius=radius, fpSize=n_bits)
         super().__init__(
             data=data,
             pipeline_manager=pipeline_manager,
@@ -865,6 +870,20 @@ class PolymerMorganSeparatedDataset(PolymerDataset):
             fingerprint = self.morgan_generator.GetCountFingerprintAsNumPy(mol)
 
         return fingerprint
+
+    def pool_features(self, features_tensor: torch.Tensor) -> torch.Tensor:
+        non_solvent_features = features_tensor[:-1]  # Exclude solvent
+        solvent_feature = features_tensor[-1]  # Last molecule is always the solvent
+
+        if len(non_solvent_features) > 0:
+            pooled_feature = torch.mean(non_solvent_features, dim=0)
+        else:
+            pooled_feature = (
+                solvent_feature.clone()
+            )  # Edge case: If only solvent exists
+
+        final_feature = torch.cat([pooled_feature, solvent_feature], dim=0)
+        return final_feature  # Shape: (2 * feature_dim,)
 
     def __getitem__(self, idx):
         mols = self.mols[idx]

@@ -38,6 +38,7 @@ val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42)
 
 train_dataset = PolymerMorganSeparatedDataset(
     data=train_df,
+    n_bits=n_bits,
     pipeline_manager=pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,
     solvent_smiles_column=solvent_smiles_column,
@@ -51,6 +52,7 @@ fitted_pipeline_manager = train_dataset.pipeline_manager
 
 val_dataset = PolymerMorganSeparatedDataset(
     data=val_df,
+    n_bits=n_bits,
     pipeline_manager=fitted_pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,
     solvent_smiles_column=solvent_smiles_column,
@@ -63,6 +65,7 @@ val_dataset = PolymerMorganSeparatedDataset(
 
 test_dataset = PolymerMorganSeparatedDataset(
     data=test_df,
+    n_bits=n_bits,
     pipeline_manager=fitted_pipeline_manager,
     monomer_smiles_column=monomer_smiles_column,
     solvent_smiles_column=solvent_smiles_column,

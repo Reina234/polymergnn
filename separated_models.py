@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from training.refactored_batched_dataset import PolymerSeparatedDataset
 from tools.smiles_transformers import PolymerisationSmilesTransform
 from torch.utils.data import DataLoader
-from training.trainer_3_features import SeparatedGNNTrainer
+from training.trainer_3_features import SeparatedGNNTrainerV2
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 target_columns = [7, 8, 9, 10, 11, 12]
@@ -76,21 +76,19 @@ hyperparams = {
     "lr": 0.001,
     "weight_decay": 1e-5,
     "mpnn_output_dim": 96,
-    "mpnn_hidden_dim": 128,
-    "mpnn_depth": 23,
+    "mpnn_hidden_dim": 256,
+    "mpnn_depth": 8,
     "mpnn_dropout": 0.1,
     "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
         [1, 1, 1, 0, 0, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 192,
-    "embedding_dim": 100,
-    "use_rdkit": True,
-    "use_chembert": False,
-    "gnn_hidden_dim": 128,
-    "gnn_output_dim": 64,
+    "embedding_dim": 256,
+    "gnn_hidden_dim": 256,
+    "gnn_output_dim": 512,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 4,
+    "gnn_num_heads": 5,
     "multitask_fnn_hidden_dim": 128,
     "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
@@ -98,7 +96,7 @@ hyperparams = {
     "weights": torch.tensor([1.0, 1.0, 8.0, 1.0, 1.0, 1.0]),
 }
 
-gnn_trainer = SeparatedGNNTrainer(
+gnn_trainer = SeparatedGNNTrainerV2(
     train_dataset=train_dataset,
     val_dataset=val_dataset,
     test_dataset=test_dataset,
