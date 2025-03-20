@@ -44,7 +44,9 @@ class ModifiedMorganPolymerMultiTaskFNNNoT(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
         self.log_diffusion_head = nn.Sequential(
-            nn.Linear(2 * n_bits + shared_layer_dim + 1, hidden_dim),
+            nn.Linear(2 * n_bits + input_dim_fnn + 1, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.SiLU(),
             nn.Linear(hidden_dim, 1),
         )
@@ -83,7 +85,9 @@ class ModifiedMorganPolymerMultiTaskFNNNoT(nn.Module):
 
         log_rg = self.log_rg_head(shared_repr)  # [B, 2] (mean, std)
 
-        diff_input = torch.cat([n_bits, shared_repr, sasa[:, 0].unsqueeze(-1)], dim=-1)
+        diff_input = torch.cat(
+            [n_bits, combined_input, sasa[:, 0].unsqueeze(-1)], dim=-1
+        )
 
         log_diffusion = self.log_diffusion_head(diff_input)  # [B, 1]
         # log_diffusion = self.log_diffusion_head(shared_repr)

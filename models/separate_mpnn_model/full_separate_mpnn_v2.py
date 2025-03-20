@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
-from models.separate_mpnn_model.attention_mpnn_embedder import (
-    AttentionFusionMoleculeEmbeddingModel,
+from models.separate_mpnn_model.mpnn_embedderv2 import (
+    NormalizedFusionMoleculeEmbeddingModel,
 )
 from models.separate_mpnn_model.modified_configured_mpnn import AttentiveConfiguredMPNN
-from models.separate_mpnn_model.modified_fnn import MoreLayerMultiTaskFNN
-from models.separate_mpnn_model.residual_gat import ResidualGatedGATModule
+from models.separate_mpnn_model.modified_separated_swapped import (
+    SwappedMoreLayerMultiTaskFNNV2,
+)
+from models.separate_mpnn_model.skip_gat import SkipGatedGATModule
 from featurisers.molecule_featuriser import RDKitFeaturizer
 
 
@@ -61,14 +63,14 @@ class SeparatedGNNSystemV2(nn.Module):
             undirected=True,
         )
 
-        self.monomer_embedding = AttentionFusionMoleculeEmbeddingModel(
+        self.monomer_embedding = NormalizedFusionMoleculeEmbeddingModel(
             chemprop_mpnn=mpnn,
             rdkit_featurizer=RDKitFeaturizer(),
             selected_rdkit_features=selected_rdkit_features,
             hidden_dim=molecule_embedding_hidden_dim,
             output_dim=embedding_dim,
         )
-        self.solvent_embedding = AttentionFusionMoleculeEmbeddingModel(
+        self.solvent_embedding = NormalizedFusionMoleculeEmbeddingModel(
             chemprop_mpnn=mpnn,
             rdkit_featurizer=RDKitFeaturizer(),
             selected_rdkit_features=selected_rdkit_features,
@@ -76,7 +78,7 @@ class SeparatedGNNSystemV2(nn.Module):
             output_dim=embedding_dim,
         )
 
-        self.polymer_gnn = ResidualGatedGATModule(
+        self.polymer_gnn = SkipGatedGATModule(
             input_dim=embedding_dim,
             hidden_dim=gnn_hidden_dim,
             output_dim=gnn_output_dim,
@@ -84,7 +86,7 @@ class SeparatedGNNSystemV2(nn.Module):
             num_heads=gnn_num_heads,
         )
 
-        self.polymer_fnn = MoreLayerMultiTaskFNN(
+        self.polymer_fnn = SwappedMoreLayerMultiTaskFNNV2(
             input_dim=gnn_output_dim,
             shared_layer_dim=multitask_fnn_shared_layer_dim,
             hidden_dim=multitask_fnn_hidden_dim,

@@ -47,8 +47,6 @@ class MoreLayerMultiTaskFNNV2(nn.Module):
             nn.SiLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.SiLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.SiLU(),
             nn.Linear(hidden_dim, 1),
         )
         # self.log_diffusion_head = nn.Sequential(

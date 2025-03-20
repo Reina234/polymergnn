@@ -103,7 +103,7 @@ hyperparams = {
     "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
     "epochs": 80,
-    "weights": torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 2.0]),
+    "weights": torch.tensor([1.0, 1.0, 1.0, 1.0, 1.0, 2.0]),
 }
 
 gnn_trainer = SeparateMorganPolymerGNNTrainer(
