@@ -75,7 +75,7 @@ hyperparams = {
     "batch_size": 32,
     "lr": 0.001,
     "weight_decay": 0,
-    "mpnn_output_dim": 128,
+    "mpnn_output_dim": 256,
     "mpnn_hidden_dim": 256,
     "mpnn_depth": 6,
     "mpnn_dropout": 0.1,
@@ -83,7 +83,7 @@ hyperparams = {
     "log_selection_tensor": torch.tensor(
         [1, 1, 0, 0, 0, 1]
     ),  # Only log-transform 2nd label
-    "molecule_embedding_hidden_dim": 192,
+    "molecule_embedding_hidden_dim": 256,
     "embedding_dim": 256,
     "gnn_hidden_dim": 256,
     "gnn_output_dim": 256,
@@ -93,7 +93,7 @@ hyperparams = {
     "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
     "epochs": 120,
-    "weights": torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0]),
+    "weights": torch.tensor([1.0, 1.0, 15.0, 1.0, 1.0, 1.0]),
 }
 
 gnn_trainer = SeparatedGNNTrainerV2(
