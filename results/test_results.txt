@@ -2277,6 +2277,7 @@ Metrics/RMSE/Average: 17.644999
 ==================================================
 
 === Test Run Summary ===
+#morgan in the mpnn
 class: SeparateMorganPolymerGNNTrainer
 n_bits: int
 unused: PolymerMorganSeparatedDataset
@@ -2345,7 +2346,8 @@ Metrics/RMSE/Average: 4.390489
 ==================================================
 
 === Test Run Summary ===
-class: SeparatedGNNTrainerV2
+#
+class: SeparatedGNNTrainerV2 
 unused: PolymerSeparatedDataset
 device: device
 hyperparams: dict
@@ -2725,5 +2727,1112 @@ Metrics/RMSE/Label_4: 3.075471
 Metrics/RMSE/Label_5: 0.487268
 Metrics/RMSE/Label_6: 0.612480
 Metrics/RMSE/Average: 5.623287
+==================================================
+
+=== Test Run Summary ===
+class: SeparateMorganMPNNPolymerGNNTrainer
+n_bits: int
+unused: PolymerMorganSeparatedFingerprintDataset
+device: device
+hyperparams: dict
+model: SeparatedGNNSystemV3Morgan
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 120
+weights: [1.0, 1.0, 5.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.327960
+Metrics/MAE/Label_2: 0.016342
+Metrics/MAE/Label_3: 2.299919
+Metrics/MAE/Label_4: 2.274691
+Metrics/MAE/Label_5: 0.815639
+Metrics/MAE/Label_6: 0.544955
+Metrics/MAE/Average: 1.046584
+Metrics/MAPE/Label_1: 19.196862
+Metrics/MAPE/Label_2: 27.183104
+Metrics/MAPE/Label_3: 42.483872
+Metrics/MAPE/Label_4: 16.733085
+Metrics/MAPE/Label_5: 35.561386
+Metrics/MAPE/Label_6: 37.148085
+Metrics/MAPE/Average: 29.717732
+Metrics/RMSE/Label_1: 0.529974
+Metrics/RMSE/Label_2: 0.028055
+Metrics/RMSE/Label_3: 9.093956
+Metrics/RMSE/Label_4: 2.809801
+Metrics/RMSE/Label_5: 1.531844
+Metrics/RMSE/Label_6: 0.826135
+Metrics/RMSE/Average: 2.469961
+==================================================
+
+=== Test Run Summary ===
+class: SeparatedGNNOneOutput
+unused: PolymerSeparatedDataset
+device: device
+hyperparams: dict
+model: OneOutputGNN
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 0, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 120
+weights: [1.0, 1.0, 15.0, 1.0, 1.0, 1.0]
+
+#one output result
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.194060
+Metrics/MAE/Label_2: 0.015571
+Metrics/MAE/Label_3: 8.606667
+Metrics/MAE/Label_4: 2.917110
+Metrics/MAE/Label_5: 0.323844
+Metrics/MAE/Label_6: 0.583522
+Metrics/MAE/Average: 2.106796
+Metrics/MAPE/Label_1: 16.640772
+Metrics/MAPE/Label_2: 28.787783
+Metrics/MAPE/Label_3: 179.826057
+Metrics/MAPE/Label_4: 17.520213
+Metrics/MAPE/Label_5: 29.349127
+Metrics/MAPE/Label_6: 34.461859
+Metrics/MAPE/Average: 51.097635
+Metrics/RMSE/Label_1: 0.286729
+Metrics/RMSE/Label_2: 0.023110
+Metrics/RMSE/Label_3: 25.379648
+Metrics/RMSE/Label_4: 3.760021
+Metrics/RMSE/Label_5: 0.807228
+Metrics/RMSE/Label_6: 0.737681
+Metrics/RMSE/Average: 5.165736
+==================================================
+
+#the next one is going to be on the first new FNN
+
+=== Test Run Summary ===
+class: SeparatedGNNV3
+unused: PolymerSeparatedDataset
+device: device
+hyperparams: dict
+model: OneOutputGNN
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 0, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 120
+weights: [1.0, 1.0, 5.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.204325
+Metrics/MAE/Label_2: 0.015935
+Metrics/MAE/Label_3: 10.329870
+Metrics/MAE/Label_4: 2.942460
+Metrics/MAE/Label_5: 0.306002
+Metrics/MAE/Label_6: 0.556627
+Metrics/MAE/Average: 2.392537
+Metrics/MAPE/Label_1: 16.770953
+Metrics/MAPE/Label_2: 29.209846
+Metrics/MAPE/Label_3: 180.086470
+Metrics/MAPE/Label_4: 17.542055
+Metrics/MAPE/Label_5: 25.033724
+Metrics/MAPE/Label_6: 32.623294
+Metrics/MAPE/Average: 50.211057
+Metrics/RMSE/Label_1: 0.280966
+Metrics/RMSE/Label_2: 0.023671
+Metrics/RMSE/Label_3: 26.408819
+Metrics/RMSE/Label_4: 3.829555
+Metrics/RMSE/Label_5: 0.749806
+Metrics/RMSE/Label_6: 0.717089
+Metrics/RMSE/Average: 5.334984
+==================================================
+
+=== Test Run Summary ===
+class: SeparatedGNNV3
+unused: PolymerSeparatedDataset
+device: device
+hyperparams: dict
+model: OneOutputGNN
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 0, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 120
+weights: [1.0, 1.0, 5.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.172874
+Metrics/MAE/Label_2: 0.016158
+Metrics/MAE/Label_3: 12.172754
+Metrics/MAE/Label_4: 2.995092
+Metrics/MAE/Label_5: 0.339300
+Metrics/MAE/Label_6: 0.581000
+Metrics/MAE/Average: 2.712863
+Metrics/MAPE/Label_1: 15.601265
+Metrics/MAPE/Label_2: 29.944831
+Metrics/MAPE/Label_3: 180.405319
+Metrics/MAPE/Label_4: 17.970867
+Metrics/MAPE/Label_5: 32.576105
+Metrics/MAPE/Label_6: 33.827710
+Metrics/MAPE/Average: 51.721016
+Metrics/RMSE/Label_1: 0.264532
+Metrics/RMSE/Label_2: 0.023769
+Metrics/RMSE/Label_3: 30.018137
+Metrics/RMSE/Label_4: 3.828072
+Metrics/RMSE/Label_5: 0.761498
+Metrics/RMSE/Label_6: 0.740631
+Metrics/RMSE/Average: 5.939440
+==================================================
+
+=== Test Run Summary ===
+class: SeparatedGNNTrainerV2
+unused: PolymerSeparatedDataset
+device: device
+hyperparams: dict
+model: SeparatedGNNSystemV2
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 100
+weights: [1.0, 1.0, 5.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.093022
+Metrics/MAE/Label_2: 0.013946
+Metrics/MAE/Label_3: 15.214256
+Metrics/MAE/Label_4: 0.875337
+Metrics/MAE/Label_5: 0.198196
+Metrics/MAE/Label_6: 0.401936
+Metrics/MAE/Average: 2.799449
+Metrics/MAPE/Label_1: 7.699645
+Metrics/MAPE/Label_2: 25.967735
+Metrics/MAPE/Label_3: 54.981911
+Metrics/MAPE/Label_4: 5.464456
+Metrics/MAPE/Label_5: 23.123384
+Metrics/MAPE/Label_6: 25.786248
+Metrics/MAPE/Average: 23.837230
+Metrics/RMSE/Label_1: 0.118446
+Metrics/RMSE/Label_2: 0.019460
+Metrics/RMSE/Label_3: 50.515072
+Metrics/RMSE/Label_4: 1.190031
+Metrics/RMSE/Label_5: 0.284470
+Metrics/RMSE/Label_6: 0.521046
+Metrics/RMSE/Average: 8.774754
+==================================================
+
+=== Test Run Summary ===
+class: PolymerGNNTrainer
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+model: PolymerGNNSystem
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0025
+weight_decay: 1e-06
+log_diffusion_factor: 5.0
+log_rg_factor: 3.0
+mpnn_output_dim: 128
+mpnn_hidden_dim: 96
+mpnn_depth: 2
+mpnn_dropout: 0.327396910351
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 192
+embedding_dim: 100
+use_rdkit: True
+use_chembert: False
+gnn_hidden_dim: 128
+gnn_output_dim: 64
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 20
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.346965
+Metrics/MAE/Label_2: 0.017136
+Metrics/MAE/Label_3: 25.099457
+Metrics/MAE/Label_4: 1.515669
+Metrics/MAE/Label_5: 0.777014
+Metrics/MAE/Label_6: 0.640364
+Metrics/MAE/Average: 4.732768
+Metrics/MAPE/Label_1: 20.576590
+Metrics/MAPE/Label_2: 26.443815
+Metrics/MAPE/Label_3: 60.733563
+Metrics/MAPE/Label_4: 11.539558
+Metrics/MAPE/Label_5: 61.623889
+Metrics/MAPE/Label_6: 52.568352
+Metrics/MAPE/Average: 38.914295
+Metrics/RMSE/Label_1: 0.397043
+Metrics/RMSE/Label_2: 0.032227
+Metrics/RMSE/Label_3: 86.941302
+Metrics/RMSE/Label_4: 1.792488
+Metrics/RMSE/Label_5: 0.971094
+Metrics/RMSE/Label_6: 0.964131
+Metrics/RMSE/Average: 15.183048
+==================================================
+
+=== Test Run Summary ===
+class: PolymerGNNTrainer
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+model: PolymerGNNSystem
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0025
+weight_decay: 1e-06
+log_diffusion_factor: 5.0
+log_rg_factor: 3.0
+mpnn_output_dim: 128
+mpnn_hidden_dim: 96
+mpnn_depth: 2
+mpnn_dropout: 0.327396910351
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 192
+embedding_dim: 100
+use_rdkit: True
+use_chembert: True
+gnn_hidden_dim: 128
+gnn_output_dim: 64
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 20
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.269472
+Metrics/MAE/Label_2: 0.014860
+Metrics/MAE/Label_3: 16.837597
+Metrics/MAE/Label_4: 2.078197
+Metrics/MAE/Label_5: 0.606712
+Metrics/MAE/Label_6: 0.506273
+Metrics/MAE/Average: 3.385519
+Metrics/MAPE/Label_1: 17.582564
+Metrics/MAPE/Label_2: 22.829179
+Metrics/MAPE/Label_3: 53.424942
+Metrics/MAPE/Label_4: 13.997099
+Metrics/MAPE/Label_5: 27.754176
+Metrics/MAPE/Label_6: 31.173852
+Metrics/MAPE/Average: 27.793635
+Metrics/RMSE/Label_1: 0.486912
+Metrics/RMSE/Label_2: 0.028042
+Metrics/RMSE/Label_3: 59.556644
+Metrics/RMSE/Label_4: 2.989904
+Metrics/RMSE/Label_5: 1.445323
+Metrics/RMSE/Label_6: 0.808277
+Metrics/RMSE/Average: 10.885851
+==================================================
+
+=== Test Run Summary ===
+class: PolymerGNNTrainer
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+model: PolymerGNNSystem
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0025
+weight_decay: 1e-06
+log_diffusion_factor: 5.0
+log_rg_factor: 3.0
+mpnn_output_dim: 128
+mpnn_hidden_dim: 96
+mpnn_depth: 2
+mpnn_dropout: 0.327396910351
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 192
+embedding_dim: 100
+use_rdkit: False
+use_chembert: True
+gnn_hidden_dim: 128
+gnn_output_dim: 64
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 20
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.215006
+Metrics/MAE/Label_2: 0.015902
+Metrics/MAE/Label_3: 16.325718
+Metrics/MAE/Label_4: 2.185881
+Metrics/MAE/Label_5: 0.743321
+Metrics/MAE/Label_6: 0.668583
+Metrics/MAE/Average: 3.359068
+Metrics/MAPE/Label_1: 15.601331
+Metrics/MAPE/Label_2: 26.720965
+Metrics/MAPE/Label_3: 69.827682
+Metrics/MAPE/Label_4: 14.818415
+Metrics/MAPE/Label_5: 37.887239
+Metrics/MAPE/Label_6: 47.679931
+Metrics/MAPE/Average: 35.422594
+Metrics/RMSE/Label_1: 0.501261
+Metrics/RMSE/Label_2: 0.028755
+Metrics/RMSE/Label_3: 57.130107
+Metrics/RMSE/Label_4: 3.110360
+Metrics/RMSE/Label_5: 1.580204
+Metrics/RMSE/Label_6: 0.928955
+Metrics/RMSE/Average: 10.546607
+==================================================
+
+=== Test Run Summary ===
+class: PolymerGNNTrainer
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+model: PolymerGNNSystem
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.0025
+weight_decay: 1e-06
+log_diffusion_factor: 5.0
+log_rg_factor: 3.0
+mpnn_output_dim: 128
+mpnn_hidden_dim: 96
+mpnn_depth: 2
+mpnn_dropout: 0.327396910351
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 192
+embedding_dim: 100
+use_rdkit: False
+use_chembert: False
+gnn_hidden_dim: 128
+gnn_output_dim: 64
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 20
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.425166
+Metrics/MAE/Label_2: 0.020101
+Metrics/MAE/Label_3: 25.099558
+Metrics/MAE/Label_4: 1.369046
+Metrics/MAE/Label_5: 0.832461
+Metrics/MAE/Label_6: 0.555037
+Metrics/MAE/Average: 4.716895
+Metrics/MAPE/Label_1: 23.719214
+Metrics/MAPE/Label_2: 33.011910
+Metrics/MAPE/Label_3: 73.978758
+Metrics/MAPE/Label_4: 9.745163
+Metrics/MAPE/Label_5: 76.191795
+Metrics/MAPE/Label_6: 51.737934
+Metrics/MAPE/Average: 44.730796
+Metrics/RMSE/Label_1: 0.493045
+Metrics/RMSE/Label_2: 0.036559
+Metrics/RMSE/Label_3: 86.941538
+Metrics/RMSE/Label_4: 1.775125
+Metrics/RMSE/Label_5: 0.979743
+Metrics/RMSE/Label_6: 0.736012
+Metrics/RMSE/Average: 15.160337
+==================================================
+
+=== Test Run Summary ===
+class: PolymerGNNTrainer
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+model: PolymerGNNSystem
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: SimpleMol2MolGraph
+batch_size: 32
+lr: 0.0025
+weight_decay: 1e-06
+log_diffusion_factor: 5.0
+log_rg_factor: 3.0
+mpnn_output_dim: 128
+mpnn_hidden_dim: 96
+mpnn_depth: 2
+mpnn_dropout: 0.327396910351
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 192
+embedding_dim: 100
+use_rdkit: False
+use_chembert: False
+gnn_hidden_dim: 128
+gnn_output_dim: 64
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 20
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.347165
+Metrics/MAE/Label_2: 0.021789
+Metrics/MAE/Label_3: 25.099623
+Metrics/MAE/Label_4: 1.366737
+Metrics/MAE/Label_5: 0.891297
+Metrics/MAE/Label_6: 0.497428
+Metrics/MAE/Average: 4.704006
+Metrics/MAPE/Label_1: 24.873653
+Metrics/MAPE/Label_2: 36.815292
+Metrics/MAPE/Label_3: 82.121795
+Metrics/MAPE/Label_4: 9.433696
+Metrics/MAPE/Label_5: 87.823898
+Metrics/MAPE/Label_6: 46.444309
+Metrics/MAPE/Average: 47.918774
+Metrics/RMSE/Label_1: 0.388301
+Metrics/RMSE/Label_2: 0.037636
+Metrics/RMSE/Label_3: 86.941642
+Metrics/RMSE/Label_4: 1.880590
+Metrics/RMSE/Label_5: 1.109010
+Metrics/RMSE/Label_6: 0.750097
+Metrics/RMSE/Average: 15.184546
+==================================================
+
+=== Test Run Summary ===
+class: PolymerGNNTrainer
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+model: PolymerGNNSystem
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: SimpleMol2MolGraph
+batch_size: 32
+lr: 0.0025
+weight_decay: 1e-06
+log_diffusion_factor: 5.0
+log_rg_factor: 3.0
+mpnn_output_dim: 128
+mpnn_hidden_dim: 96
+mpnn_depth: 2
+mpnn_dropout: 0.327396910351
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 192
+embedding_dim: 100
+use_rdkit: False
+use_chembert: True
+gnn_hidden_dim: 128
+gnn_output_dim: 64
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 20
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.260954
+Metrics/MAE/Label_2: 0.015778
+Metrics/MAE/Label_3: 12.022226
+Metrics/MAE/Label_4: 2.167182
+Metrics/MAE/Label_5: 0.740192
+Metrics/MAE/Label_6: 0.635484
+Metrics/MAE/Average: 2.640303
+Metrics/MAPE/Label_1: 17.700943
+Metrics/MAPE/Label_2: 26.040769
+Metrics/MAPE/Label_3: 40.864629
+Metrics/MAPE/Label_4: 14.552964
+Metrics/MAPE/Label_5: 37.638223
+Metrics/MAPE/Label_6: 58.954751
+Metrics/MAPE/Average: 32.625380
+Metrics/RMSE/Label_1: 0.559385
+Metrics/RMSE/Label_2: 0.028254
+Metrics/RMSE/Label_3: 57.028082
+Metrics/RMSE/Label_4: 3.406512
+Metrics/RMSE/Label_5: 1.694110
+Metrics/RMSE/Label_6: 0.890881
+Metrics/RMSE/Average: 10.601204
+==================================================
+
+=== Test Run Summary ===
+class: PolymerGNNTrainer
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+model: PolymerGNNSystem
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: SimpleMol2MolGraph
+batch_size: 32
+lr: 0.0025
+weight_decay: 1e-06
+log_diffusion_factor: 5.0
+log_rg_factor: 3.0
+mpnn_output_dim: 128
+mpnn_hidden_dim: 96
+mpnn_depth: 2
+mpnn_dropout: 0.327396910351
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 192
+embedding_dim: 100
+use_rdkit: True
+use_chembert: True
+gnn_hidden_dim: 128
+gnn_output_dim: 64
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 20
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.325244
+Metrics/MAE/Label_2: 0.016137
+Metrics/MAE/Label_3: 9.942884
+Metrics/MAE/Label_4: 1.996503
+Metrics/MAE/Label_5: 0.672806
+Metrics/MAE/Label_6: 0.546084
+Metrics/MAE/Average: 2.249943
+Metrics/MAPE/Label_1: 18.883678
+Metrics/MAPE/Label_2: 25.715268
+Metrics/MAPE/Label_3: 43.321541
+Metrics/MAPE/Label_4: 13.606393
+Metrics/MAPE/Label_5: 35.453671
+Metrics/MAPE/Label_6: 37.818551
+Metrics/MAPE/Average: 29.133184
+Metrics/RMSE/Label_1: 0.583484
+Metrics/RMSE/Label_2: 0.027980
+Metrics/RMSE/Label_3: 44.407098
+Metrics/RMSE/Label_4: 2.985230
+Metrics/RMSE/Label_5: 1.596625
+Metrics/RMSE/Label_6: 0.839450
+Metrics/RMSE/Average: 8.406644
+==================================================
+
+=== Test Run Summary ===
+class: PolymerGNNTrainer
+unused: PolymerGNNDataset
+device: device
+hyperparams: dict
+model: PolymerGNNSystem
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: SimpleMol2MolGraph
+batch_size: 32
+lr: 0.0025
+weight_decay: 1e-06
+log_diffusion_factor: 5.0
+log_rg_factor: 3.0
+mpnn_output_dim: 128
+mpnn_hidden_dim: 96
+mpnn_depth: 2
+mpnn_dropout: 0.327396910351
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 192
+embedding_dim: 100
+use_rdkit: True
+use_chembert: False
+gnn_hidden_dim: 128
+gnn_output_dim: 64
+gnn_dropout: 0.1
+gnn_num_heads: 4
+multitask_fnn_hidden_dim: 96
+multitask_fnn_shared_layer_dim: 128
+multitask_fnn_dropout: 0.1
+epochs: 20
+weights: [1.0, 1.0, 8.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.202122
+Metrics/MAE/Label_2: 0.016673
+Metrics/MAE/Label_3: 25.099480
+Metrics/MAE/Label_4: 1.362596
+Metrics/MAE/Label_5: 0.605602
+Metrics/MAE/Label_6: 0.611493
+Metrics/MAE/Average: 4.649661
+Metrics/MAPE/Label_1: 15.912104
+Metrics/MAPE/Label_2: 25.339296
+Metrics/MAPE/Label_3: 71.136069
+Metrics/MAPE/Label_4: 9.703617
+Metrics/MAPE/Label_5: 62.171358
+Metrics/MAPE/Label_6: 48.876631
+Metrics/MAPE/Average: 38.856513
+Metrics/RMSE/Label_1: 0.256054
+Metrics/RMSE/Label_2: 0.032062
+Metrics/RMSE/Label_3: 86.941356
+Metrics/RMSE/Label_4: 1.733189
+Metrics/RMSE/Label_5: 0.833968
+Metrics/RMSE/Label_6: 0.822210
+Metrics/RMSE/Average: 15.103140
+==================================================
+
+=== Test Run Summary ===
+class: SeparatedGNNChemBertaTrainer
+unused: PolymerSeparatedDataset
+device: device
+hyperparams: dict
+model: SeparatedGNNSystemChemberta
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 100
+weights: [1.0, 1.0, 5.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.083278
+Metrics/MAE/Label_2: 0.015972
+Metrics/MAE/Label_3: 17.760708
+Metrics/MAE/Label_4: 0.740596
+Metrics/MAE/Label_5: 0.187000
+Metrics/MAE/Label_6: 0.327646
+Metrics/MAE/Average: 3.185867
+Metrics/MAPE/Label_1: 7.611018
+Metrics/MAPE/Label_2: 30.350313
+Metrics/MAPE/Label_3: 59.371191
+Metrics/MAPE/Label_4: 4.425475
+Metrics/MAPE/Label_5: 24.281256
+Metrics/MAPE/Label_6: 15.410164
+Metrics/MAPE/Average: 23.574903
+Metrics/RMSE/Label_1: 0.111916
+Metrics/RMSE/Label_2: 0.022014
+Metrics/RMSE/Label_3: 56.524070
+Metrics/RMSE/Label_4: 0.989451
+Metrics/RMSE/Label_5: 0.269628
+Metrics/RMSE/Label_6: 0.460220
+Metrics/RMSE/Average: 9.729550
+==================================================
+
+=== Test Run Summary ===
+class: SeparatedGNNTrainerWithJSON
+unused: PolymerSeparatedDataset
+device: device
+hyperparams: dict
+model: SeparatedGNNSystemV2
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 1
+weights: [1.0, 1.0, 5.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.460408
+Metrics/MAE/Label_2: 0.023986
+Metrics/MAE/Label_3: 34.647331
+Metrics/MAE/Label_4: 3.957660
+Metrics/MAE/Label_5: 1.354965
+Metrics/MAE/Label_6: 0.896106
+Metrics/MAE/Average: 6.890076
+Metrics/MAPE/Label_1: 29.095680
+Metrics/MAPE/Label_2: 43.665990
+Metrics/MAPE/Label_3: 101.526940
+Metrics/MAPE/Label_4: 24.820180
+Metrics/MAPE/Label_5: 80.698830
+Metrics/MAPE/Label_6: 45.302075
+Metrics/MAPE/Average: 54.184949
+Metrics/RMSE/Label_1: 0.878070
+Metrics/RMSE/Label_2: 0.036114
+Metrics/RMSE/Label_3: 105.297194
+Metrics/RMSE/Label_4: 4.610321
+Metrics/RMSE/Label_5: 2.344247
+Metrics/RMSE/Label_6: 1.039671
+Metrics/RMSE/Average: 19.034270
+==================================================
+
+=== Test Run Summary ===
+class: SeparatedGNNTrainerWithJSON
+unused: PolymerSeparatedDataset
+device: device
+hyperparams: dict
+model: SeparatedGNNSystemV2
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 120
+weights: [1.0, 1.0, 5.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.086044
+Metrics/MAE/Label_2: 0.014607
+Metrics/MAE/Label_3: 27.549803
+Metrics/MAE/Label_4: 0.824182
+Metrics/MAE/Label_5: 0.162289
+Metrics/MAE/Label_6: 0.346431
+Metrics/MAE/Average: 4.830559
+Metrics/MAPE/Label_1: 7.610695
+Metrics/MAPE/Label_2: 28.134626
+Metrics/MAPE/Label_3: 59.478849
+Metrics/MAPE/Label_4: 5.092268
+Metrics/MAPE/Label_5: 19.316615
+Metrics/MAPE/Label_6: 17.545342
+Metrics/MAPE/Average: 22.863066
+Metrics/RMSE/Label_1: 0.113587
+Metrics/RMSE/Label_2: 0.020048
+Metrics/RMSE/Label_3: 96.311805
+Metrics/RMSE/Label_4: 1.042360
+Metrics/RMSE/Label_5: 0.245743
+Metrics/RMSE/Label_6: 0.460356
+Metrics/RMSE/Average: 16.365650
+==================================================
+
+=== Test Run Summary ===
+class: SeparatedGNNTrainerWithJSON
+unused: PolymerSeparatedDataset
+device: device
+hyperparams: dict
+model: SeparatedGNNSystemV2
+train_loader: DataLoader
+val_loader: DataLoader
+test_loader: DataLoader
+evaluation_metrics: list
+num_batches: int
+track_learning_curve: bool
+figure_size: tuple
+eval_metrics: dict
+optimiser: Adam
+feature_pipelines: list
+target_pipelines: list
+molecule_featuriser: FGMembershipMol2MolGraph
+batch_size: 32
+lr: 0.001
+weight_decay: 0
+mpnn_output_dim: 256
+mpnn_hidden_dim: 256
+mpnn_depth: 6
+mpnn_dropout: 0.1
+rdkit_selection_tensor: [1, 1, 1, 1, 1, 1, 1]
+log_selection_tensor: [1, 1, 1, 0, 0, 1]
+molecule_embedding_hidden_dim: 256
+embedding_dim: 256
+gnn_hidden_dim: 256
+gnn_output_dim: 256
+gnn_dropout: 0.1
+gnn_num_heads: 5
+multitask_fnn_hidden_dim: 128
+multitask_fnn_shared_layer_dim: 256
+multitask_fnn_dropout: 0.1
+epochs: 120
+weights: [1.0, 1.0, 5.0, 1.0, 1.0, 1.0]
+
+--- Test Metrics ---
+Metrics/MAE/Label_1: 0.084678
+Metrics/MAE/Label_2: 0.015459
+Metrics/MAE/Label_3: 6.989092
+Metrics/MAE/Label_4: 0.898522
+Metrics/MAE/Label_5: 0.179202
+Metrics/MAE/Label_6: 0.373713
+Metrics/MAE/Average: 1.423444
+Metrics/MAPE/Label_1: 7.379069
+Metrics/MAPE/Label_2: 29.986405
+Metrics/MAPE/Label_3: 55.653268
+Metrics/MAPE/Label_4: 5.621756
+Metrics/MAPE/Label_5: 20.339039
+Metrics/MAPE/Label_6: 21.419774
+Metrics/MAPE/Average: 23.399885
+Metrics/RMSE/Label_1: 0.110047
+Metrics/RMSE/Label_2: 0.020937
+Metrics/RMSE/Label_3: 26.729979
+Metrics/RMSE/Label_4: 1.162106
+Metrics/RMSE/Label_5: 0.252175
+Metrics/RMSE/Label_6: 0.498547
+Metrics/RMSE/Average: 4.795632
 ==================================================
 

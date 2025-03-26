@@ -4,10 +4,10 @@ from models.separate_mpnn_model.mpnn_embedderv2 import (
     NormalizedFusionMoleculeEmbeddingModel,
 )
 from models.separate_mpnn_model.modified_configured_mpnn import AttentiveConfiguredMPNN
-from models.separate_mpnn_model.modified_separated_swapped import (
-    SwappedMoreLayerMultiTaskFNNV2,
-)
-from models.separate_mpnn_model.skip_gat import SkipGatedGATModule
+
+# from models.separate_mpnn_model.modified_separated_fnn import MoreLayerMultiTaskFNNV2
+from models.separate_mpnn_model.modified_fnn_v4 import NewConfigFNNV3
+from models.separate_mpnn_model.residual_gat import ResidualGatedGATModule
 from featurisers.molecule_featuriser import RDKitFeaturizer
 
 
@@ -78,15 +78,15 @@ class SeparatedGNNSystemV2(nn.Module):
             output_dim=embedding_dim,
         )
 
-        self.polymer_gnn = SkipGatedGATModule(
+        self.polymer_gnn = ResidualGatedGATModule(
             input_dim=embedding_dim,
             hidden_dim=gnn_hidden_dim,
             output_dim=gnn_output_dim,
             dropout_rate=gnn_dropout,
             num_heads=gnn_num_heads,
         )
-
-        self.polymer_fnn = SwappedMoreLayerMultiTaskFNNV2(
+        # best performer used the more layer V2 one I think
+        self.polymer_fnn = NewConfigFNNV3(
             input_dim=gnn_output_dim,
             shared_layer_dim=multitask_fnn_shared_layer_dim,
             hidden_dim=multitask_fnn_hidden_dim,

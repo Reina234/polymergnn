@@ -104,7 +104,9 @@ tuner = HyperparameterTuner(
     trial_name="trial/freesolv",
     use_tensorboard=True,
     save_results_dir="results/freesolv",
-    additional_info={"batch_size": 32},
+    additional_info={
+        "batch_size": 32,
+    },
 )
 results = tuner.run()
 

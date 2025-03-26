@@ -17,7 +17,7 @@ model_path = "march_11_model_no_re_sd.pth"
 input_csv = (
     "/Users/reinazheng/Desktop/polymergnn/solvation_prediction/additional_data.csv"
 )
-output_csv = "solvent_polymer_predictions2.csv"
+output_csv = "solvent_polymer_predictions3.csv"
 
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

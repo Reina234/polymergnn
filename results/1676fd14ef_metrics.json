@@ -1,0 +1,25 @@
+{
+    "0": {
+        "Metrics/MAE/Label_1": 0.46040788292884827,
+        "Metrics/MAE/Label_2": 0.023985879495739937,
+        "Metrics/MAE/Label_3": 34.64733123779297,
+        "Metrics/MAE/Label_4": 3.957659959793091,
+        "Metrics/MAE/Label_5": 1.3549647331237793,
+        "Metrics/MAE/Label_6": 0.8961060047149658,
+        "Metrics/MAE/Average": 6.890075949641566,
+        "Metrics/MAPE/Label_1": 29.09567952156067,
+        "Metrics/MAPE/Label_2": 43.665990233421326,
+        "Metrics/MAPE/Label_3": 101.526939868927,
+        "Metrics/MAPE/Label_4": 24.820180237293243,
+        "Metrics/MAPE/Label_5": 80.69882988929749,
+        "Metrics/MAPE/Label_6": 45.302075147628784,
+        "Metrics/MAPE/Average": 54.18494914968809,
+        "Metrics/RMSE/Label_1": 0.8780699417393011,
+        "Metrics/RMSE/Label_2": 0.036114024097400915,
+        "Metrics/RMSE/Label_3": 105.29719380609106,
+        "Metrics/RMSE/Label_4": 4.610321464997871,
+        "Metrics/RMSE/Label_5": 2.344247485450453,
+        "Metrics/RMSE/Label_6": 1.0396714684706847,
+        "Metrics/RMSE/Average": 19.03426969847446
+    }
+}

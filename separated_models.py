@@ -2,14 +2,14 @@
 
 import torch
 from tools.transform_pipeline_manager import TransformPipelineManager
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import RobustScaler
 import pandas as pd
 from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from sklearn.model_selection import train_test_split
 from training.refactored_batched_dataset import PolymerSeparatedDataset
 from tools.smiles_transformers import PolymerisationSmilesTransform
 from torch.utils.data import DataLoader
-from training.trainer_3_features import SeparatedGNNTrainerV2
+from training.trainer_3_features import SeparatedGNNTrainerWithJSON
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 target_columns = [7, 8, 9, 10, 11, 12]
@@ -25,8 +25,8 @@ pipeline_manager = TransformPipelineManager(
 )
 
 
-pipeline_manager.set_feature_pipeline(MinMaxScaler())
-pipeline_manager.set_target_pipeline(MinMaxScaler())
+pipeline_manager.set_feature_pipeline(RobustScaler())
+pipeline_manager.set_target_pipeline(RobustScaler())
 
 
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -71,6 +71,7 @@ test_dataset = PolymerSeparatedDataset(
     is_train=False,
 )
 
+
 hyperparams = {
     "batch_size": 32,
     "lr": 0.001,
@@ -93,10 +94,10 @@ hyperparams = {
     "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
     "epochs": 120,
-    "weights": torch.tensor([1.0, 1.0, 15.0, 1.0, 1.0, 1.0]),
+    "weights": torch.tensor([1.0, 1.0, 5.0, 1.0, 1.0, 1.0]),
 }
 
-gnn_trainer = SeparatedGNNTrainerV2(
+gnn_trainer = SeparatedGNNTrainerWithJSON(
     train_dataset=train_dataset,
     val_dataset=val_dataset,
     test_dataset=test_dataset,
@@ -104,12 +105,12 @@ gnn_trainer = SeparatedGNNTrainerV2(
     log_dir="logs/full_gnn_trials/with_density/no_morgan/",
     track_learning_curve=True,
 )
-train_loader = DataLoader(
-    train_dataset, batch_size=32, collate_fn=train_dataset.collate_fn
-)
+if __name__ == "__main__":
 
+    train_loader = DataLoader(
+        train_dataset, batch_size=32, collate_fn=train_dataset.collate_fn
+    )
 
-gnn_trainer.run()
+    gnn_trainer.run()
 
-
-torch.save(gnn_trainer.model.state_dict(), "march_11_model_no_re_sd_no_seq.pth")
+    torch.save(gnn_trainer.model.state_dict(), "march_28_v3.pth")
