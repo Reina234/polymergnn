@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 
 class SimpleCNN(nn.Module):
@@ -13,7 +14,9 @@ class SimpleCNN(nn.Module):
         self.fc = nn.Linear(32 * num_molecules, output_dim)
 
     def forward(self, batch):
-        x = batch[-1]  # Extract fingerprints_tensor
+        features = batch["polymer_feats"]
+        fingerprints = batch["fingerprints_tensor"]
+        x = torch.cat([features, fingerprints], dim=1)
         x = x.permute(0, 2, 1)  # Reshape for CNN: (batch, features, sequence)
         x = self.conv1(x)
         x = self.conv2(x)

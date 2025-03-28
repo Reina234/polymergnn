@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 
 
 class SimpleRNN(nn.Module):
@@ -8,6 +9,8 @@ class SimpleRNN(nn.Module):
         self.fc = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, batch):
-        x = batch[-1]  # Extract fingerprints_tensor from batch
+        features = batch["polymer_feats"]
+        fingerprints = batch["fingerprints_tensor"]
+        x = torch.cat([features, fingerprints], dim=1)
         _, (hn, _) = self.rnn(x)  # Get last hidden state
         return self.fc(hn[-1])  # Output final hidden state

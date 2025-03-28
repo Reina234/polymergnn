@@ -82,7 +82,7 @@ hyperparams = {
     "mpnn_dropout": 0.1,
     "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
-        [1, 1, 0, 0, 0, 1]
+        [1, 0, 1, 0, 0, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 256,
     "embedding_dim": 256,

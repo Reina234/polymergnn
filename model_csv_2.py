@@ -6,14 +6,14 @@ from tools.transform_pipeline_manager import TransformPipelineManager
 from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from tools.smiles_transformers import PolymerisationSmilesTransform
 from training.no_fitting_dataset import NoFitPolymerSeparatedDataset
-from separated_models import train_dataset, val_dataset, gnn_trainer
+from outlier_removed_separated import train_dataset, gnn_trainer
 
 # Define file paths
-model_path = "/Users/reinazheng/Desktop/polymergnn/march_28_v3.pth"
+model_path = "/Users/reinazheng/Desktop/polymergnn/march_28_v4.pth"
 input_csv = (
     "/Users/reinazheng/Desktop/polymergnn/solvation_prediction/additional_data.csv"
 )
-output_csv = "solvent_polymer_predictions3.csv"
+output_csv = "solvent_polymer_predictions5.csv"
 
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -45,30 +45,29 @@ inference_loader = DataLoader(
 hyperparams = {
     "batch_size": 32,
     "lr": 0.001,
-    "weight_decay": 1e-5,
-    "mpnn_output_dim": 128,
-    "mpnn_hidden_dim": 128,
-    "mpnn_depth": 3,
+    "weight_decay": 0,
+    "mpnn_output_dim": 256,
+    "mpnn_hidden_dim": 256,
+    "mpnn_depth": 5,
     "mpnn_dropout": 0.1,
     "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
-        [1, 1, 1, 0, 0, 1]
+        [1, 0, 1, 0, 0, 1, 0]
     ),  # Only log-transform 2nd label
-    "molecule_embedding_hidden_dim": 192,
-    "embedding_dim": 80,
-    "use_rdkit": True,
-    "use_chembert": False,
-    "gnn_hidden_dim": 128,
-    "gnn_output_dim": 64,
+    "molecule_embedding_hidden_dim": 256,
+    "embedding_dim": 256,
+    "gnn_hidden_dim": 256,
+    "gnn_output_dim": 256,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 5,
+    "gnn_num_heads": 2,
     "multitask_fnn_hidden_dim": 128,
     "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
-    "epochs": 100,
-    "weights": torch.tensor([1.0, 1.0, 10.0, 1.0, 1.0, 1.0]),
+    "epochs": 80,
+    "weights": torch.tensor([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
 }
-target_columns = [7, 8, 9, 10, 11, 12]
+
+target_columns = [7, 8, 9, 10, 11, 12, 13]
 feature_columns = [0, 5, 6]
 monomer_smiles_column = 4
 solvent_smiles_column = 2

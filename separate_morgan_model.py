@@ -2,7 +2,7 @@
 
 import torch
 from tools.transform_pipeline_manager import TransformPipelineManager
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 import pandas as pd
 from tools.mol_to_molgraph import FGMembershipMol2MolGraph
 from sklearn.model_selection import train_test_split
@@ -11,15 +11,17 @@ from tools.smiles_transformers import PolymerisationSmilesTransform
 from torch.utils.data import DataLoader
 from training.trainer_3_features import SeparateMorganPolymerGNNTrainer
 
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-target_columns = [7, 8, 9, 10, 11, 12]
+target_columns = [7, 8, 9, 10, 11, 12, 13]
 feature_columns = [0, 5, 6]
 monomer_smiles_column = 4
 solvent_smiles_column = 2
 
-n_bits = 2048
+df = pd.read_csv("/Users/reinazheng/Desktop/polymergnn/filtered_clusters_removed.csv")
 
-df = pd.read_csv("data/output_2_4_2_with_density.csv")
+
+n_bits = 2048
 
 
 pipeline_manager = TransformPipelineManager(
@@ -27,8 +29,8 @@ pipeline_manager = TransformPipelineManager(
 )
 
 
-pipeline_manager.set_feature_pipeline(MinMaxScaler())
-pipeline_manager.set_target_pipeline(MinMaxScaler())
+pipeline_manager.set_feature_pipeline(StandardScaler())
+pipeline_manager.set_target_pipeline(StandardScaler())
 
 
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -80,31 +82,28 @@ test_dataset = PolymerMorganSeparatedDataset(
 hyperparams = {
     "batch_size": 32,
     "lr": 0.001,
-    "weight_decay": 1e-5,
-    "log_diffusion_factor": 5.0,  # Tune scaling
-    "log_rg_factor": 3.0,
+    "weight_decay": 0,
     "mpnn_output_dim": 128,
-    "mpnn_hidden_dim": 128,
+    "mpnn_hidden_dim": 256,
     "mpnn_depth": 3,
     "mpnn_dropout": 0.1,
     "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
-        [1, 1, 1, 0, 0, 1]
+        [1, 1, 1, 0, 0, 1, 1]
     ),  # Only log-transform 2nd label
-    "molecule_embedding_hidden_dim": 192,
-    "embedding_dim": 100,
-    "use_rdkit": True,
-    "use_chembert": False,
-    "gnn_hidden_dim": 128,
-    "gnn_output_dim": 64,
+    "molecule_embedding_hidden_dim": 256,
+    "embedding_dim": 256,
+    "gnn_hidden_dim": 256,
+    "gnn_output_dim": 256,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 5,
-    "multitask_fnn_hidden_dim": 256,
+    "gnn_num_heads": 2,
+    "multitask_fnn_hidden_dim": 128,
     "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
-    "epochs": 80,
-    "weights": torch.tensor([1.0, 1.0, 0.0, 1.0, 1.0, 2.0]),
+    "epochs": 55,
+    "weights": torch.tensor([1.0, 2.0, 8.0, 1.0, 1.0, 1.0, 1.0]),
 }
+
 
 gnn_trainer = SeparateMorganPolymerGNNTrainer(
     n_bits=n_bits,

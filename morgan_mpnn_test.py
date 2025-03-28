@@ -12,14 +12,14 @@ from torch.utils.data import DataLoader
 from training.trainer_3_features import SeparateMorganMPNNPolymerGNNTrainer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-target_columns = [7, 8, 9, 10, 11, 12]
+target_columns = [7, 8, 9, 10, 11, 12, 13]
 feature_columns = [0, 5, 6]
 monomer_smiles_column = 4
 solvent_smiles_column = 2
 
-n_bits = 2048
+df = pd.read_csv("/Users/reinazheng/Desktop/polymergnn/cluster_2.csv")
 
-df = pd.read_csv("data/output_2_4_2_with_density.csv")
+n_bits = 2048
 
 
 pipeline_manager = TransformPipelineManager(
@@ -83,23 +83,23 @@ hyperparams = {
     "weight_decay": 0,
     "mpnn_output_dim": 256,
     "mpnn_hidden_dim": 256,
-    "mpnn_depth": 6,
+    "mpnn_depth": 3,
     "mpnn_dropout": 0.1,
     "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
-        [1, 1, 1, 0, 0, 1]
+        [1, 1, 1, 0, 0, 1, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 256,
     "embedding_dim": 256,
     "gnn_hidden_dim": 256,
     "gnn_output_dim": 256,
     "gnn_dropout": 0.1,
-    "gnn_num_heads": 5,
+    "gnn_num_heads": 2,
     "multitask_fnn_hidden_dim": 128,
     "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.1,
-    "epochs": 120,
-    "weights": torch.tensor([1.0, 1.0, 5.0, 1.0, 1.0, 1.0]),
+    "epochs": 55,
+    "weights": torch.tensor([1.0, 2.0, 10.0, 1.0, 1.0, 1.0, 1.0]),
 }
 
 gnn_trainer = SeparateMorganMPNNPolymerGNNTrainer(

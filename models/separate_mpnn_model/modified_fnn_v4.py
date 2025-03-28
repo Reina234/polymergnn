@@ -24,33 +24,26 @@ class NewConfigFNNV3(nn.Module):
         # Shared representation
         self.shared_layer = nn.Sequential(
             nn.Linear(input_dim_fnn, shared_layer_dim),
-            nn.SiLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(shared_layer_dim, shared_layer_dim),
-            nn.SiLU(),
+            nn.ReLU(),
             nn.Dropout(dropout_rate),
         )
         # Heads for individual property predictions
-        self.sasa_head = nn.Sequential(
+        self.rg_mu_sasa_re_head = nn.Sequential(
             nn.Linear(shared_layer_dim, hidden_dim),
-            nn.SiLU(),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 4),
+        )
+        self.log_rg_re_sigma_head = nn.Sequential(
+            nn.Linear(shared_layer_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
             nn.Linear(hidden_dim, 2),
         )
-        self.log_rg_head = nn.Sequential(
-            nn.Linear(shared_layer_dim, hidden_dim), nn.SiLU(), nn.Linear(hidden_dim, 2)
-        )
-        self.log_ree_head = nn.Sequential(
-            nn.Linear(shared_layer_dim + 2, hidden_dim),
-            nn.SiLU(),
-            nn.Linear(hidden_dim, 1),
-        )
+
         self.log_diffusion_head = nn.Sequential(
-            nn.Linear(input_dim_fnn + 1, hidden_dim),
-            nn.SiLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.SiLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.SiLU(),
+            nn.Linear(shared_layer_dim, hidden_dim),
+            nn.ReLU(),
             nn.Linear(hidden_dim, 1),
         )
         # self.log_diffusion_head = nn.Sequential(
@@ -75,27 +68,18 @@ class NewConfigFNNV3(nn.Module):
         # Shared representation
         shared_repr = self.shared_layer(combined_input)
 
-        log_rg = self.log_rg_head(shared_repr)  # [B, 2] (mean, std)
+        log_rg_re_sigma = self.log_rg_re_sigma_head(shared_repr)  # [B, 2] (mean, std)
 
-        sasa = self.sasa_head(shared_repr)  # [B, 2] (mean, std)
+        rg_mu_sasa_re = self.rg_mu_sasa_re_head(shared_repr)  # [B, 2] (mean, std)
 
-        diff_input = torch.cat([combined_input, log_rg[:, 1].unsqueeze(-1)], dim=-1)
-
-        log_diffusion = self.log_diffusion_head(diff_input)  # [B, 1]
+        log_diffusion = self.log_diffusion_head(shared_repr)  # [B, 1]
         # log_diffusion = self.log_diffusion_head(shared_repr)
-        log_ree_input = torch.cat(
-            [shared_repr, sasa[:, 0].unsqueeze(-1), sasa[:, 1].unsqueeze(-1)], dim=-1
-        )
 
-        log_ree = self.log_ree_head(log_ree_input)
-
-        output = self.process_outputs(
-            sasa=sasa, log_rg=log_rg, log_diffusion=log_diffusion, log_ree=log_ree
-        )
+        output = self.process_outputs(log_rg_re_sigma, rg_mu_sasa_re, log_diffusion)
 
         return output
 
-    def process_outputs(self, sasa, log_rg, log_diffusion, log_ree):
+    def process_outputs(self, log_rg_re_sigma, rg_mu_sasa_re, log_diffusion):
         """
         Processes the model outputs into a single concatenated tensor
         with the correct ordering for MSE loss.
@@ -110,9 +94,16 @@ class NewConfigFNNV3(nn.Module):
             torch.Tensor: A single tensor with the ordering [log_rg, log_diffusion, sasa, log_ree]
         """
 
+        log_rg_sigma = log_rg_re_sigma[:, 0].unsqueeze(-1)
+        log_re_sigma = log_rg_re_sigma[:, 1].unsqueeze(-1)
+
+        rg_mu = rg_mu_sasa_re[:, 0].unsqueeze(-1)
+        sasa = rg_mu_sasa_re[:, 1:3]
+        re = rg_mu_sasa_re[:, 3].unsqueeze(-1)
+
         # Concatenate in the correct order
         output_tensor = torch.cat(
-            [log_rg, log_diffusion, sasa, log_ree], dim=-1
+            [rg_mu, log_rg_sigma, log_diffusion, sasa, re, log_re_sigma], dim=-1
         )  # [B, 7]
 
         return output_tensor  # Shape [B, 7]

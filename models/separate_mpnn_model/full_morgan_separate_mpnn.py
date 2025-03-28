@@ -5,7 +5,7 @@ from models.separate_mpnn_model.modified_configured_mpnn import AttentiveConfigu
 from models.separate_mpnn_model.modified_morgan_fnn import (
     ModifiedMorganPolymerMultiTaskFNNNoT,
 )
-from models.separate_mpnn_model.modified_gat import DensityOnlyGATModuleNT
+from models.separate_mpnn_model.residual_gat import ResidualGatedGATModule
 from featurisers.molecule_featuriser import RDKitFeaturizer
 
 # from models.separate_mpnn_model.modified_gat import DensityOnlyGATModuleNT
@@ -87,7 +87,7 @@ class MorganSeparatedGNNSystem(nn.Module):
             use_chembert=use_chembert,
         )
 
-        self.polymer_gnn = DensityOnlyGATModuleNT(
+        self.polymer_gnn = ResidualGatedGATModule(
             input_dim=embedding_dim,
             hidden_dim=gnn_hidden_dim,
             output_dim=gnn_output_dim,
