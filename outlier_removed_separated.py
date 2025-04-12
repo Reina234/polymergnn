@@ -4,14 +4,30 @@ import torch
 from tools.transform_pipeline_manager import TransformPipelineManager
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
-from tools.mol_to_molgraph import FGMembershipMol2MolGraph
+from tools.mol_to_molgraph import FGMembershipMol2MolGraph, SimpleMol2MolGraph
 from sklearn.model_selection import train_test_split
 from training.refactored_batched_dataset import PolymerSeparatedDataset
 from tools.smiles_transformers import PolymerisationSmilesTransform
 from torch.utils.data import DataLoader
 from training.trainer_3_features import SeparatedGNNTrainerWithJSON
+import random
+import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+set_seed(50)
+
+
 target_columns = [7, 8, 9, 10, 11, 12, 13]
 feature_columns = [0, 5, 6]
 monomer_smiles_column = 4
@@ -39,7 +55,7 @@ train_dataset = PolymerSeparatedDataset(
     monomer_smiles_column=monomer_smiles_column,
     solvent_smiles_column=solvent_smiles_column,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
-    mol_to_molgraph=FGMembershipMol2MolGraph(),
+    mol_to_molgraph=SimpleMol2MolGraph(),
     target_columns=target_columns,
     feature_columns=feature_columns,
     is_train=True,
@@ -52,7 +68,7 @@ val_dataset = PolymerSeparatedDataset(
     monomer_smiles_column=monomer_smiles_column,
     solvent_smiles_column=solvent_smiles_column,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
-    mol_to_molgraph=FGMembershipMol2MolGraph(),
+    mol_to_molgraph=SimpleMol2MolGraph(),
     target_columns=target_columns,
     feature_columns=feature_columns,
     is_train=False,
@@ -64,7 +80,7 @@ test_dataset = PolymerSeparatedDataset(
     monomer_smiles_column=monomer_smiles_column,
     solvent_smiles_column=solvent_smiles_column,
     monomer_smiles_transformer=PolymerisationSmilesTransform(),
-    mol_to_molgraph=FGMembershipMol2MolGraph(),
+    mol_to_molgraph=SimpleMol2MolGraph(),
     target_columns=target_columns,
     feature_columns=feature_columns,
     is_train=False,
@@ -81,7 +97,7 @@ hyperparams = {
     "weight_decay": 0,
     "mpnn_output_dim": 256,
     "mpnn_hidden_dim": 256,
-    "mpnn_depth": 3,
+    "mpnn_depth": 6,
     "mpnn_dropout": 0.1,
     "molecule_embedding_hidden_dim": 256,
     "embedding_dim": 256,
@@ -90,7 +106,7 @@ hyperparams = {
     "gnn_dropout": 0.2,
     "gnn_num_heads": 2,
     "multitask_fnn_hidden_dim": 128,
-    "multitask_fnn_shared_layer_dim": 512,
+    "multitask_fnn_shared_layer_dim": 256,
     "multitask_fnn_dropout": 0.3,
     "epochs": 65,
 }
@@ -111,4 +127,4 @@ if __name__ == "__main__":
 
     gnn_trainer.run()
 
-    torch.save(gnn_trainer.model.state_dict(), "march_28_v4.pth")
+    # torch.save(gnn_trainer.model.state_dict(), "march_28_v4.pth")

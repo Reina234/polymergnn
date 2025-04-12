@@ -10,6 +10,8 @@ from training.refactored_batched_dataset import PolymerSeparatedDataset
 from tools.smiles_transformers import PolymerisationSmilesTransform
 from torch.utils.data import DataLoader
 from training.benchmark_trainer import MPNNTrainer
+import random
+import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 target_columns = [7, 8, 9, 10, 11, 12, 13]
@@ -18,6 +20,18 @@ monomer_smiles_column = 4
 solvent_smiles_column = 2
 
 df = pd.read_csv("/Users/reinazheng/Desktop/polymergnn/filtered_clusters_removed.csv")
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+set_seed(42)
 
 
 pipeline_manager = TransformPipelineManager(
@@ -82,7 +96,7 @@ hyperparams = {
     "mpnn_dropout": 0.1,
     "rdkit_selection_tensor": torch.tensor([1, 1, 1, 1, 1, 1, 1]),
     "log_selection_tensor": torch.tensor(
-        [1, 0, 1, 0, 0, 1, 0]
+        [1, 1, 1, 0, 0, 1, 1]
     ),  # Only log-transform 2nd label
     "molecule_embedding_hidden_dim": 256,
     "embedding_dim": 256,

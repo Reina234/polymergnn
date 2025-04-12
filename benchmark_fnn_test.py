@@ -13,6 +13,21 @@ from training.refactored_batched_dataset import (
 from tools.smiles_transformers import PolymerisationSmilesTransform
 from torch.utils.data import DataLoader
 from training.benchmark_trainer import FNNTrainer, RNNTrainer
+import random
+import numpy as np
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+set_seed(80)
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 target_columns = [7, 8, 9, 10, 11, 12]
