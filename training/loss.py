@@ -2,14 +2,11 @@ import torch.nn as nn
 
 
 class LossStrategy:
-    """Base class for loss strategies."""
-
     def compute_loss(self, predictions, targets):
         raise NotImplementedError
 
 
 class MSELossStrategy(LossStrategy):
-    """Standard MSE loss."""
 
     def __init__(self):
         self.criterion = nn.MSELoss()
@@ -19,8 +16,6 @@ class MSELossStrategy(LossStrategy):
 
 
 class MSEWithContrastiveLoss(LossStrategy):
-    """MSE + Contrastive Loss."""
-
     def __init__(self):
         self.criterion = nn.MSELoss()
 

@@ -12,16 +12,16 @@ from training.refactored_trainer import PolymerGNNTrainer
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load dataset
+
 df = pd.read_csv("data/output_2_4_2.csv")
 
 target_columns = [6, 7, 8, 9, 10, 11]
 feature_columns = [4, 5]
 num_outputs = len(target_columns)
-# Create Transform Manager
+
 pipeline_manager = TransformPipelineManager(feature_columns, target_columns)
 
-# Apply same transformation to all features & targets
+
 pipeline_manager.set_feature_pipeline(StandardScaler())
 pipeline_manager.set_target_pipeline(StandardScaler())
 
@@ -131,7 +131,7 @@ study = optuna.create_study(
 )
 study.optimize(objective, n_trials=50)
 
-# Print best hyperparameters
+
 best_hyperparams = study.best_params
 print("Best hyperparameters:", best_hyperparams)
 

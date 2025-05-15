@@ -11,8 +11,6 @@ from models.molecule_prediction_model import (
 
 
 class ModelFactory(ABC):
-    """Abstract base class for model factories."""
-
     @abstractmethod
     def create_model(self, params: dict) -> torch.nn.Module:
         pass
@@ -25,8 +23,6 @@ class ModelFactory(ABC):
 
 
 class MoleculeEmbeddingModelFactory(ABC):
-    """Factory for creating MoleculeEmbeddingModel instances."""
-
     def __init__(
         self,
         default_rdkit_features=None,

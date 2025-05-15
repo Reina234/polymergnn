@@ -10,14 +10,6 @@ class OldPolymerMultiTaskFNN(nn.Module):
         hidden_dim: int,
         dropout_rate: float = 0.2,
     ):
-        """
-        Multi-task FNN for predicting polymer properties.
-
-        Args:
-        - input_dim (int): Input size (GNN output + polymer features N, T).
-        - hidden_dim (int): Size of hidden layers.
-        - dropout_rate (float): Dropout for regularization.
-        """
         super().__init__()
 
         # Shared representation
@@ -53,17 +45,6 @@ class OldPolymerMultiTaskFNN(nn.Module):
         # )
 
     def forward(self, batch):
-        """
-        Forward pass through the multi-task FNN.
-
-        Args:
-        - batch (dict): Contains:
-            - "polymer_embedding": Polymer representation from GATNN [batch, embedding_dim]
-            - "polymer_feats": Additional polymer properties (N, T) [batch, 2]
-
-        Returns:
-        - Dict of predicted polymer properties
-        """
         polymer_embedding = batch["polymer_embedding"]  # [B, embedding_dim]
         polymer_feats = batch["polymer_feats"]  # [B, 2] (N, T)
         scaling_factors = torch.tensor(
@@ -94,23 +75,9 @@ class OldPolymerMultiTaskFNN(nn.Module):
         return output
 
     def process_outputs(self, sasa, log_rg, log_diffusion, log_ree):
-        """
-        Processes the model outputs into a single concatenated tensor
-        with the correct ordering for MSE loss.
-
-        Args:
-            sasa (torch.Tensor): Shape [B, 2]
-            log_rg (torch.Tensor): Shape [B, 2]
-            log_diffusion (torch.Tensor): Shape [B, 1]
-            log_ree (torch.Tensor): Shape [B, 2]
-
-        Returns:
-            torch.Tensor: A single tensor with the ordering [log_rg, log_diffusion, sasa, log_ree]
-        """
-
-        # Concatenate in the correct order
+        
         output_tensor = torch.cat(
             [log_rg, log_diffusion, sasa, log_ree], dim=-1
-        )  # [B, 7]
+        )  
 
-        return output_tensor  # Shape [B, 7]
+        return output_tensor  

@@ -57,14 +57,12 @@ class TransformPipelineManager:
             self.inverse_log_transform = no_inverse_log
 
     def set_feature_pipeline(self, pipeline: Pipeline) -> None:
-        """Sets the same pipeline (deep-copied) for each feature column."""
         if self.num_features > 0:
             self.feature_pipelines = [
                 copy.deepcopy(pipeline) for _ in range(self.num_features)
             ]
 
     def set_feature_pipelines(self, pipeline_list: List[Pipeline]) -> None:
-        """Sets individual pipelines for each feature."""
         if self.num_features == 0:
             return
         if len(pipeline_list) != self.num_features:
@@ -74,9 +72,7 @@ class TransformPipelineManager:
         self.feature_pipelines = [copy.deepcopy(p) for p in pipeline_list]
 
     def set_target_pipeline(self, pipeline: Pipeline) -> None:
-        """Sets a single pipeline for all target columns, including log versions (using deep copies)."""
         if self.num_targets > 0:
-            # For the non-log targets, use a deep copy for each.
             normal_pipelines = [
                 copy.deepcopy(pipeline) for _ in range(self.num_targets)
             ]
@@ -99,7 +95,6 @@ class TransformPipelineManager:
             self.target_pipelines = normal_pipelines + log_pipelines
 
     def set_target_pipelines(self, pipeline_list: List[Pipeline]) -> None:
-        """Sets individual pipelines for each target & log target."""
         if self.num_targets == 0:
             return
         if len(pipeline_list) != 2 * self.num_targets:
@@ -109,10 +104,7 @@ class TransformPipelineManager:
         self.target_pipelines = [copy.deepcopy(p) for p in pipeline_list]
 
     def fit(self, df: pd.DataFrame, log_indexes: Optional[List[int]] = None) -> None:
-        """
-        Fits feature and target pipelines.
-        If log_indexes is None, assumes the last num_targets columns are the log-transformed targets.
-        """
+        
         if self.num_features > 0:
             for i, idx in enumerate(self.feature_indexes):
                 self.fitted_feature_pipelines[i] = self.feature_pipelines[i].fit(

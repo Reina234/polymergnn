@@ -18,7 +18,7 @@ feature_columns = [0, 5, 6]
 monomer_smiles_column = 4
 solvent_smiles_column = 2
 
-df = pd.read_csv("/Users/reinazheng/Desktop/polymergnn/filtered_clusters_removed.csv")
+df = pd.read_csv("PLACEHOLDER")
 
 
 n_bits = 2048

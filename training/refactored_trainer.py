@@ -475,12 +475,6 @@ class PolymerGNNTrainer(Trainer):
         close_writer_on_finish: bool = True,
         additional_info: Optional[Dict[str, str]] = None,
     ):
-        """
-        Additional arguments:
-         - loss_config: Dictionary for configuring loss weights or other loss-related hyperparameters.
-         - log_transform_helper: An instance of a log transform helper (like LogTransformHelper) that will
-           be used for inverse transforming predictions and labels.
-        """
         super().__init__(
             train_dataset=train_dataset,
             val_dataset=val_dataset,

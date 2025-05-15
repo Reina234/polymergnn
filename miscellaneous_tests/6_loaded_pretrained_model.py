@@ -134,10 +134,8 @@ pretrained_mpnn_path = "pretrained_embedding_on_lipophobicity.pth"
 pretrained_dict = torch.load(pretrained_mpnn_path, weights_only=True)
 model_dict = embedding_model.state_dict()
 
-# Filter out unexpected keys
-pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
 
-# Load the filtered state dict
+pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
 embedding_model.load_state_dict(pretrained_dict, strict=False)
 
 # embedding_model.load_state_dict(torch.load(pretrained_mpnn_path, weights_only=True))

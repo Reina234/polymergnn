@@ -11,7 +11,6 @@ class ErtlAlgorithm:
         Chem.MolFromSmarts("[CX4](-[O,N,S])-[O,N,S]"),  # Acetal carbons
         Chem.MolFromSmarts("[O,N,S]1CC1"),  # Oxirane, aziridine, thiirane
     ]
-    # Added "bonds" field to store bond indices.
 
     def __init__(self):
         pass
@@ -51,32 +50,28 @@ class ErtlAlgorithm:
         aset.update(bset)
 
     def detect(self, mol: Chem.Mol) -> List[IFG]:
-        """Finds and labels functional groups in the molecule."""
-
+        
         marked_atoms = self._mark_atoms(mol=mol)
         groups = []
         functional_groups = []
-        # Merge adjacent marked atoms.
         while marked_atoms:
             grp = {marked_atoms.pop()}
             self._merge_groups(mol=mol, marked=marked_atoms, aset=grp)
             groups.append(grp)
 
         for g in groups:
-            # Expand FG to include adjacent carbons and hydrogens.
             extra = set()
             for idx in g:
                 for neighbor in mol.GetAtomWithIdx(idx).GetNeighbors():
                     if neighbor.HasProp("polymer_site"):
                         continue
-                    # Include both carbons and hydrogens.
+                  
                     if neighbor.GetAtomicNum() in (6, 1):
                         extra.add(neighbor.GetIdx())
             full_group = g.union(extra)
 
             environment = extra - g
 
-            # Get bonds where both endpoints are in the FG.
             bonds_in_group = set()
             bonds_in_full_group = set()
 
@@ -98,7 +93,6 @@ class ErtlAlgorithm:
                     atoms=Chem.MolFragmentToSmiles(
                         mol, g, canonical=True, allHsExplicit=True
                     ),
-                    # The 'type' field shows the FG plus the adjacent C/H atoms.
                     type=Chem.MolFragmentToSmiles(
                         mol, full_group, canonical=True, allHsExplicit=True
                     ),

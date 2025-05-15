@@ -11,7 +11,6 @@ embeddings = output[0][:, 0, :]
 print(embeddings)
 embedding = torch.mean(output[0], 1)
 print(embedding)
-# Compare this snippet from models/chemprop2_hierarchical.py:
 print(embedding.shape)
 
 test = tokenizer("CCC", return_tensors="pt", truncation=True)
@@ -21,5 +20,4 @@ embeddings = output[0][:, 0, :]
 print(embeddings)
 embedding = torch.mean(output[0], 1)
 print(embedding)
-# Compare this snippet from models/chemprop2_hierarchical.py:
 print(embedding.shape)

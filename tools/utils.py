@@ -9,12 +9,10 @@ from typing import Optional
 
 
 def log_transform(X):
-    """Applies log transformation safely to avoid log(0)."""
     return np.log(X + 1e-8)
 
 
 def inverse_log_transform(X):
-    """Inverse log transformation."""
     return np.exp(X) - 1e-8
 
 
@@ -26,34 +24,17 @@ def create_column_transformer(
     target_transform=StandardScaler(),
     log_target_transform=StandardScaler(),
 ):
-    """
-    Creates a ColumnTransformer that applies transformations using **column indices**.
-
-    Args:
-    - feature_indices (list): List of feature column indices.
-    - target_indices (list): List of target column indices.
-    - num_original_columns (int): Total number of columns before adding log-transformed targets.
-    - feature_transform: Transformation for feature columns.
-    - target_transform: Transformation for target columns.
-    - log_target_transform: Transformation for log-transformed targets.
-
-    Returns:
-    - ColumnTransformer: Configured transformer.
-    - column_order: List of column names after transformation.
-    """
     if not num_original_columns:
         num_original_columns = max(feature_indices + target_indices) + 1
 
     transformers = []
-    column_order = []  # Track order of transformed columns
-
-    # Apply feature transformations
+    column_order = []  
     for i in feature_indices:
         name = f"feature_{i}"
         transformers.append((name, feature_transform, [i]))
         column_order.append(name)
 
-    # Apply target transformations (non-log versions)
+
     for i, index in enumerate(target_indices):
         name = f"target_{i}"
         transformers.append((name, target_transform, [index]))
@@ -88,7 +69,7 @@ def stack_tensors(tensor_list, convert_to_tensor=True):
         return None
 
     if not convert_to_tensor and any(t is None for t in tensor_list):
-        return None  # Return None immediately if any None is found
+        return None 
 
     tensor_list = [
         torch.tensor(0.0, dtype=torch.float32) if t is None else t for t in tensor_list
