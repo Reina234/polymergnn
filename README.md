@@ -1,3 +1,3 @@
 # polymergnn
 
-Work in progress, needs some heavy refactoring to make clean :(
+Work in progress, code is a bit (very) messy :(
