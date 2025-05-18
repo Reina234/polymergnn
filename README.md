@@ -1,3 +1,3 @@
 # polymergnn
 
-Work in progress, code is rather messy :(
+This repo contains the code for the machine learning portion of my IIB Project. Some repo cleanup is in progress, bit messy :(
